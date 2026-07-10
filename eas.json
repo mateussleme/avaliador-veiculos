@@ -11,7 +11,7 @@
         "EXPO_PUBLIC_SUPABASE_URL": "https://oraztujgkuknsgovdnqa.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yYXp0dWpna3VrbnNnb3ZkbnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NzY5NDIsImV4cCI6MjA5ODI1Mjk0Mn0.Rkf_-Jk5H1IB2Khg8z1dDeIxT6Vg-Z_9xPA8hdQEolk",
         "EXPO_PUBLIC_BACKEND_URL": "https://avaliador-backend-eight.vercel.app",
-        "EXPO_PUBLIC_FIPE_TOKEN": ""
+        "EXPO_PUBLIC_FIPE_TOKEN": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiIxY2YzMzQ2OC01NjdhLTRjNzUtODFjNC1iNDA3NjJlMDI0MjAiLCJlbWFpbCI6InJvbXBhdG9tYXRldXNAZ21haWwuY29tIiwiaWF0IjoxNzgyMjQwOTU0fQ.-hNTtYBF2yaXx10crrzT2ll3rGOtys_0vLOBLT9ZR9k"
       }
     },
     "preview": {
@@ -21,7 +21,7 @@
         "EXPO_PUBLIC_SUPABASE_URL": "https://oraztujgkuknsgovdnqa.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yYXp0dWpna3VrbnNnb3ZkbnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NzY5NDIsImV4cCI6MjA5ODI1Mjk0Mn0.Rkf_-Jk5H1IB2Khg8z1dDeIxT6Vg-Z_9xPA8hdQEolk",
         "EXPO_PUBLIC_BACKEND_URL": "https://avaliador-backend-eight.vercel.app",
-        "EXPO_PUBLIC_FIPE_TOKEN": ""
+        "EXPO_PUBLIC_FIPE_TOKEN": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiIxY2YzMzQ2OC01NjdhLTRjNzUtODFjNC1iNDA3NjJlMDI0MjAiLCJlbWFpbCI6InJvbXBhdG9tYXRldXNAZ21haWwuY29tIiwiaWF0IjoxNzgyMjQwOTU0fQ.-hNTtYBF2yaXx10crrzT2ll3rGOtys_0vLOBLT9ZR9k"
       }
     },
     "production": {
@@ -30,7 +30,7 @@
         "EXPO_PUBLIC_SUPABASE_URL": "https://oraztujgkuknsgovdnqa.supabase.co",
         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yYXp0dWpna3VrbnNnb3ZkbnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NzY5NDIsImV4cCI6MjA5ODI1Mjk0Mn0.Rkf_-Jk5H1IB2Khg8z1dDeIxT6Vg-Z_9xPA8hdQEolk",
         "EXPO_PUBLIC_BACKEND_URL": "https://avaliador-backend-eight.vercel.app",
-        "EXPO_PUBLIC_FIPE_TOKEN": ""
+        "EXPO_PUBLIC_FIPE_TOKEN": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiIxY2YzMzQ2OC01NjdhLTRjNzUtODFjNC1iNDA3NjJlMDI0MjAiLCJlbWFpbCI6InJvbXBhdG9tYXRldXNAZ21haWwuY29tIiwiaWF0IjoxNzgyMjQwOTU0fQ.-hNTtYBF2yaXx10crrzT2ll3rGOtys_0vLOBLT9ZR9k"
       },
       "android": {
         "buildType": "apk"

@@ -27,7 +27,7 @@ import { EvaluationWithOutcome } from './src/types/database';
 // true  → exige login antes de acessar o app (modo produção)
 // Mude para true quando o login via Google/email estiver configurado.
 // ============================================================
-const REQUIRE_AUTH = false;
+const REQUIRE_AUTH = true;
 
 type EvalStep = 'search' | 'version-select' | 'form' | 'result';
 type HistoryStep = 'list' | 'detail' | 'outcome';
