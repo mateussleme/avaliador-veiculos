@@ -11,7 +11,7 @@ Plataforma de inteligência para compra de veículos seminovos. O avaliador info
   - Veículo do ano atual: referência de 5.000 km ÷ 12 × mês atual (ex: julho = 2.917 km)
   - Demais anos: km/ano sobre 12.000 km/ano de referência
   - Faixas: até 3.000 km/ano (+6%), até 6.000 (+4%), até 9.000 (+2%), até 14.000 (+1%), até 16.000 (-1%), até 20.000 (-2%), até 25.000 (-4%), até 30.000 (-6%), acima de 30.000 (-7%)
-- **Pneus novos**: +0,5% por pneu (carro, máx. +2%) ou +1,0% por pneu (moto, máx. +2%)
+- **Pneus novos**: seleção por botões — carro: 1 a 4 pneus (+0,5% cada, máx. +2%); moto: 1 ou 2 pneus (+1,0% cada, máx. +2%)
 - **Revisão na concessionária**: +1% se sim, -4% se não
 - **Repintura**: -2,5% + dedução em R$ (peças × R$800, rodas × R$300)
 - **Repasse**: 92% do valor de oferta
@@ -26,7 +26,7 @@ Plataforma de inteligência para compra de veículos seminovos. O avaliador info
 | Backend | Vercel Serverless Functions (Node.js) |
 | Banco de dados | Supabase (Postgres + Auth + RLS) |
 | API FIPE | fipe.parallelum.com.br — gratuita, 500 req/dia sem token |
-| API de placa/Renavam | APIBrasil — R$0,06/consulta |
+| API de placa | APIBrasil — R$0,06/consulta |
 | Linguagem | TypeScript no app, JavaScript no backend |
 
 ---
@@ -38,14 +38,14 @@ App.tsx                              entrada, navegação e auth gate
 src/
   api/
     fipeApi.ts                       cliente FIPE gratuito (marca/modelo/ano)
-    plateApi.ts                      consulta por placa/Renavam (com cache em sessão)
+    plateApi.ts                      consulta por placa (com cache em sessão)
   components/                        peças de UI reutilizáveis
   domain/
     types.ts                         tipos centrais
     evaluationEngine.ts              motor de avaliação (regras e cálculos)
     discountTable.ts                 tabela de descontos por marca/modelo (355 modelos)
     brBrands.ts                      filtro de marcas do mercado brasileiro
-    plateValidation.ts               validação local de formato (placa/Renavam)
+    plateValidation.ts               validação local de formato de placa
   hooks/
     useBottomPadding.ts              safe area dinâmica para ScrollViews
   lib/
@@ -53,7 +53,7 @@ src/
     plateCache.ts                    cache em sessão para consultas de placa
   screens/
     AuthScreen.tsx                   login (email/senha + Google + Apple no iOS)
-    SearchScreen.tsx                 busca por marca/modelo/ano ou placa/Renavam
+    SearchScreen.tsx                 busca por marca/modelo/ano ou placa
     VersionSelectionScreen.tsx       seleção da versão FIPE quando há múltiplos matches
     EvaluationFormScreen.tsx         formulário de condições do veículo
     ResultScreen.tsx                 resultado com breakdown + repasse
@@ -124,7 +124,7 @@ eas build:download --id SEU-BUILD-ID
 
 ## Backend (avaliador-backend)
 
-Serverless na Vercel. Única responsabilidade: receber placa ou Renavam do app e consultar a APIBrasil, mantendo o token da APIBrasil seguro no servidor.
+Serverless na Vercel. Única responsabilidade: receber a placa do app e consultar a APIBrasil, mantendo o token da APIBrasil seguro no servidor. Aceita apenas placas nos formatos ABC1234 e ABC1D23 — validação nas duas pontas (app e backend).
 
 Variável de ambiente necessária na Vercel:
 ```
@@ -133,7 +133,7 @@ APIBRASIL_BEARER_TOKEN=eyJ...
 
 Endpoints:
 - `GET  /api/health` — health check
-- `POST /api/plate-lookup` — consulta placa ou Renavam
+- `POST /api/plate-lookup` — consulta por placa
 
 ---
 
@@ -154,3 +154,34 @@ View: `evaluations_with_outcome` (com `security_invoker = on`)
 - Source maps: desabilitados em produção (`extra.productionSourceMap: false`)
 - Botão voltar Android: único `BackHandler` listener para evitar comportamento duplo
 - Cache de placas: evita cobranças duplas para a mesma placa na mesma sessão
+---
+
+## Changelog
+
+### 2026-07-10
+- Seleção de pneus por botões (chips) para carros — 1 a 4 pneus, igual ao padrão das motos
+- Removida a busca por RENAVAM (app e backend aceitam apenas placa)
+- Tela de privacidade atualizada para refletir o comportamento real do app
+- Validação de placa nas duas pontas (app + backend)
+
+### 2026-07-08
+- Cache de placas em sessão (evita cobrança dupla da mesma placa)
+- TabBar com safe area correta (botões não ficam mais atrás da barra de gestos)
+- BackHandler único no Android (voltar físico navega o fluxo corretamente)
+- Km para veículos do ano atual: referência de 5.000 km ÷ 12 × mês atual
+
+### 2026-07-05
+- Revisão na concessionária: +1% (sim) / -4% (não)
+- Repintura com custo de preparação: peças ×R$800, rodas ×R$300
+- Valor de Repasse: 92% da oferta de compra
+- Fluxo de pneus: pergunta sim/não antes da quantidade
+
+### 2026-07-04
+- Correção de crash no APK Android (Apple Auth condicional, URL polyfill no entry point)
+- SecureStore com chunking para tokens grandes
+- Nova identidade visual aplicada
+
+### 2026-06-30
+- Autenticação Supabase (email/senha + Google OAuth)
+- Histórico de avaliações e registro de desfechos
+- Schema do banco com RLS e security hardening
