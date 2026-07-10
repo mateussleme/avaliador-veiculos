@@ -55,12 +55,12 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    paddingVertical: spacing.md + 2,
-    paddingHorizontal: spacing.xl,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 50,
+  paddingVertical: spacing.md + 2,
+  paddingHorizontal: spacing.xl,
+  borderRadius: radius.lg,
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: 52,
   },
   primary: {
     backgroundColor: colors.ink,
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   secondary: {
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.borderStrong,
+    borderColor: colors.gold,
   },
   ghost: {
     backgroundColor: 'transparent',
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     color: colors.textOnInk,
   },
   labelSecondary: {
-    color: colors.textPrimary,
+    color: colors.ink,
   },
   labelGhost: {
     color: colors.ink,

@@ -7,31 +7,34 @@
 
 export const colors = {
   // Base
-  background: '#EEF1EF',
+  background: '#F4F6F8',
   surface: '#FFFFFF',
-  surfaceAlt: '#F4F6F4',
-  border: '#DCE0DB',
-  borderStrong: '#C3C9C2',
+  surfaceAlt: '#EDF3FA',
+  border: '#D9DEE8',
+  borderStrong: '#B7C2D1',
 
   // Texto
-  textPrimary: '#13181B',
-  textSecondary: '#5B6360',
-  textTertiary: '#8B9290',
-  textOnInk: '#F4F6F4',
+  textPrimary: '#20262E',
+  textSecondary: '#667085',
+  textTertiary: '#98A2B3',
+  textOnInk: '#FFFFFF',
 
   // Marca
-  ink: '#16243B', // navy profundo — header, botão primário
-  inkLight: '#27395A',
+  ink: '#16243B',
+  inkLight: '#213551',
+  brandBlue: '#1E4E8C',
+  gold: '#C69349',
+  goldLight: '#E7BF78',
 
   // Sinalização (mesma linguagem de um painel de carro)
-  good: '#1E7A52',
-  goodBg: '#E3F1E9',
-  caution: '#A8690F',
-  cautionBg: '#FBEDD9',
-  danger: '#A93226',
-  dangerBg: '#F8E1DE',
-  info: '#1B5A8C',
-  infoBg: '#E2EEF6',
+  good: '#1F9D6A',
+  goodBg: '#ECF8F2',
+  caution: '#C69349',
+  cautionBg: '#FAF3E3',
+  danger: '#D64545',
+  dangerBg: '#FBE8E8',
+  info: '#1E4E8C',
+  infoBg: '#EAF2FF',
 } as const;
 
 export const spacing = {
@@ -44,17 +47,17 @@ export const spacing = {
 } as const;
 
 export const radius = {
-  sm: 6,
-  md: 10,
-  lg: 16,
+  sm: 8,
+  md: 12,
+  lg: 20,
   pill: 999,
 } as const;
 
 export const type = {
-  display: { fontSize: 30, fontWeight: '700' as const, letterSpacing: -0.3 },
-  h1: { fontSize: 22, fontWeight: '700' as const, letterSpacing: -0.2 },
-  h2: { fontSize: 17, fontWeight: '600' as const },
+  display: { fontSize: 34, fontWeight: '800' as const, letterSpacing: -0.5 },
+  h1: { fontSize: 24, fontWeight: '800' as const, letterSpacing: -0.3 },
+  h2: { fontSize: 18, fontWeight: '700' as const },
   body: { fontSize: 15, fontWeight: '400' as const, lineHeight: 21 },
-  label: { fontSize: 12, fontWeight: '600' as const, letterSpacing: 0.6 },
+  label: { fontSize: 12, fontWeight: '700' as const, letterSpacing: 0.7 },
   caption: { fontSize: 12, fontWeight: '400' as const },
 };

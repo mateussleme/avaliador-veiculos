@@ -13,10 +13,16 @@ export function SectionLabel({ children }: { children: ReactNode }) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: spacing.lg,
+  borderRadius: radius.lg,
+  borderWidth: 1,
+  borderColor: colors.border,
+  padding: spacing.lg,
+
+  shadowColor: '#16243B',
+  shadowOpacity: 0.06,
+  shadowRadius: 14,
+  shadowOffset: { width: 0, height: 8 },
+  elevation: 2,
   },
   sectionLabel: {
     fontSize: type.label.fontSize,
