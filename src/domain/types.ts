@@ -36,9 +36,12 @@ export interface EvaluationInput {
   vehicle: FipeVehicleInfo;
   kind: VehicleKind;
   currentMileageKm: number;
-  newTireCount: number; // será arredondado e limitado pelo motor de avaliação (0-4 carro, 0-2 moto)
-  hadDealerService: boolean; // revisão feita na concessionária
-  hasRepaint: boolean; // há repintura identificada
+  hasTires: boolean;               // veículo possui pneus novos?
+  newTireCount: number;            // quantos pneus novos (0-4 carro, 0-2 moto)
+  hadDealerService: boolean;       // revisão feita na concessionária
+  hasRepaint: boolean;             // há repintura identificada
+  repaintPiecesCount: number;      // número de peças para pintar (R$800 cada)
+  repaintWheelsCount: number;      // número de rodas para pintar (R$300 cada)
 }
 
 export type AdjustmentSeverity = 'good' | 'neutral' | 'caution' | 'danger';
@@ -47,17 +50,21 @@ export interface AdjustmentLine {
   label: string;
   detail: string;
   percent: number; // pode ser positivo ou negativo
+  amountDeduction?: number; // dedução em R$ (para custos concretos como repintura)
   severity: AdjustmentSeverity;
 }
 
 export interface EvaluationResult {
   baseValue: number;              // preço cheio da tabela FIPE
   baseDiscountPercent: number;    // desconto base em % (ex: 20), vindo da tabela ou padrão
-  discountSource: 'table' | 'default'; // 'table' = achado na planilha, 'default' = padrão -20%
-  discountMatchedModel?: string;  // modelo exato encontrado na tabela (para exibição)
-  standardValue: number;          // FIPE - desconto base = valor de referência da avaliação
-  adjustmentPercent: number;      // soma de km + pneus + revisão + repintura, sobre o padrão
-  estimatedValue: number;         // standardValue ajustado pelo adjustmentPercent
+  discountSource: 'table' | 'default';
+  discountMatchedModel?: string;
+  standardValue: number;          // FIPE - desconto base
+  adjustmentPercent: number;      // soma dos ajustes percentuais (km + pneus + revisão + repintura %)
+  estimatedValue: number;         // standardValue × (1 + adjustmentPercent/100)
+  preparationCost: number;        // custo de preparação em R$ (peças + rodas para pintar)
+  finalOfferValue: number;        // estimatedValue - preparationCost = valor da oferta de compra
+  repasseValue: number;           // finalOfferValue × 0.92 = valor para repasse
   lines: AdjustmentLine[];
   positionLabel: 'Abaixo do padrão' | 'No padrão' | 'Acima do padrão';
   mileageKm: number;

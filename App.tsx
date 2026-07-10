@@ -1,123 +1,249 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { StyleSheet } from 'react-native';
+import { ActivityIndicator, BackHandler, Platform, StyleSheet, View } from 'react-native';
+import type { Session } from '@supabase/supabase-js';
 
+import { supabase } from './src/lib/supabase';
 import { AppHeader } from './src/components/AppHeader';
+import { TabBar, TabKey } from './src/components/TabBar';
+import { AuthScreen } from './src/screens/AuthScreen';
 import { PrivacyScreen } from './src/screens/PrivacyScreen';
 import { SearchScreen } from './src/screens/SearchScreen';
 import { VersionSelectionScreen } from './src/screens/VersionSelectionScreen';
 import { EvaluationFormScreen } from './src/screens/EvaluationFormScreen';
 import { ResultScreen } from './src/screens/ResultScreen';
+import { HistoryScreen } from './src/screens/HistoryScreen';
+import { EvaluationDetailScreen } from './src/screens/EvaluationDetailScreen';
+import { OutcomeScreen } from './src/screens/OutcomeScreen';
 import { colors } from './src/theme/tokens';
-import { EvaluationResult, FipeVehicleInfo, VehicleKind } from './src/domain/types';
+import { EvaluationInput, EvaluationResult, FipeVehicleInfo, VehicleKind } from './src/domain/types';
 import { FipeVersionMatch } from './src/api/plateApi';
+import { EvaluationWithOutcome } from './src/types/database';
 
-type Step = 'search' | 'version-select' | 'form' | 'result';
+// ============================================================
+// FLAG DE AUTENTICAÇÃO
+// false → app abre direto, sem tela de login (modo desenvolvimento)
+// true  → exige login antes de acessar o app (modo produção)
+// Mude para true quando o login via Google/email estiver configurado.
+// ============================================================
+const REQUIRE_AUTH = false;
+
+type EvalStep = 'search' | 'version-select' | 'form' | 'result';
+type HistoryStep = 'list' | 'detail' | 'outcome';
 
 export default function App() {
-  const [step, setStep] = useState<Step>('search');
-  const [kind, setKind] = useState<VehicleKind>('cars');
-  const [vehicle, setVehicle] = useState<FipeVehicleInfo | null>(null);
+  const [session, setSession]     = useState<Session | null>(null);
+  const [authLoading, setAuthLoading] = useState(REQUIRE_AUTH);
+
+  useEffect(() => {
+    if (!REQUIRE_AUTH) return;
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setAuthLoading(false);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  // Sessão disponível para o ResultScreen enviar no header de chamadas ao backend
+  const sessionToken = session?.access_token ?? null;
+
+  const [activeTab, setActiveTab] = useState<TabKey>('evaluate');
+
+  // ---- Fluxo de avaliação ----
+  const [evalStep, setEvalStep]   = useState<EvalStep>('search');
+  const [kind, setKind]           = useState<VehicleKind>('cars');
+  const [vehicle, setVehicle]     = useState<FipeVehicleInfo | null>(null);
   const [allMatches, setAllMatches] = useState<FipeVersionMatch[] | null>(null);
-  const [result, setResult] = useState<EvaluationResult | null>(null);
+  const [evalInput, setEvalInput] = useState<EvaluationInput | null>(null);
+  const [result, setResult]       = useState<EvaluationResult | null>(null);
+  const [searchedPlate, setSearchedPlate] = useState<string | undefined>(undefined);
+
+  // ---- Fluxo de histórico ----
+  const [historyStep, setHistoryStep] = useState<HistoryStep>('list');
+  const [selectedEvaluation, setSelectedEvaluation] = useState<EvaluationWithOutcome | null>(null);
+  const [historyRefresh, setHistoryRefresh] = useState(0);
+
   const [privacyOpen, setPrivacyOpen] = useState(false);
 
   function handleContinueFromSearch(
-    selectedKind: VehicleKind,
-    selectedVehicle: FipeVehicleInfo,
-    matches?: FipeVersionMatch[]
+    k: VehicleKind,
+    v: FipeVehicleInfo,
+    matches?: FipeVersionMatch[],
+    plate?: string
   ) {
-    setKind(selectedKind);
-    setVehicle(selectedVehicle);
-
-    // Se veio de busca por placa com múltiplas versões → tela de seleção
+    setKind(k);
+    setVehicle(v);
+    setSearchedPlate(plate);
     if (matches && matches.length > 1) {
       setAllMatches(matches);
-      setStep('version-select');
+      setEvalStep('version-select');
     } else {
-      // Busca manual ou só 1 versão → vai direto pro formulário
       setAllMatches(null);
-      setStep('form');
+      setEvalStep('form');
     }
   }
 
   function handleVersionConfirmed(match: FipeVersionMatch) {
     setVehicle(match.vehicle);
-    setStep('form');
+    setEvalStep('form');
   }
 
-  function handleResult(evaluation: EvaluationResult) {
+  function handleResult(evaluation: EvaluationResult, input: EvaluationInput) {
     setResult(evaluation);
-    setStep('result');
+    setEvalInput(input);
+    setEvalStep('result');
   }
 
   function handleRestart() {
     setVehicle(null);
     setAllMatches(null);
     setResult(null);
-    setStep('search');
+    setEvalInput(null);
+    setSearchedPlate(undefined);
+    setEvalStep('search');
   }
 
-  function headerProps() {
-    switch (step) {
-      case 'search':
-        return { title: 'Avaliador de veículos', subtitle: 'Busca por marca, modelo e ano' };
-      case 'version-select':
-        return {
-          title: 'Selecione a versão',
-          subtitle: vehicle ? `${vehicle.brand} ${vehicle.model}` : undefined,
-          onBack: () => setStep('search'),
-        };
-      case 'form':
-        return {
-          title: 'Condições do veículo',
-          subtitle: vehicle ? `${vehicle.brand} ${vehicle.model}` : undefined,
-          onBack: () => setStep(allMatches ? 'version-select' : 'search'),
-        };
-      case 'result':
-        return {
-          title: 'Resultado da avaliação',
-          onBack: () => setStep('form'),
-        };
+  function handleSelectEvaluation(evaluation: EvaluationWithOutcome) {
+    setSelectedEvaluation(evaluation);
+    setHistoryStep('detail');
+  }
+
+  function handleOutcomeSaved() {
+    setHistoryRefresh(n => n + 1);
+    setHistoryStep('list');
+    setSelectedEvaluation(null);
+  }
+
+  function handleTabChange(tab: TabKey) {
+    setActiveTab(tab);
+    if (tab === 'history') {
+      setHistoryStep('list');
+      setSelectedEvaluation(null);
     }
   }
 
+  // ---- Botão físico de voltar do Android (único listener) ----
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    const onBack = () => {
+      if (privacyOpen) { setPrivacyOpen(false); return true; }
+      if (activeTab === 'history') {
+        if (historyStep === 'outcome') { setHistoryStep('detail'); return true; }
+        if (historyStep === 'detail')  { setHistoryStep('list');   return true; }
+        return false;
+      }
+      if (evalStep === 'result')         { setEvalStep('form');                                     return true; }
+      if (evalStep === 'form')           { setEvalStep(allMatches ? 'version-select' : 'search');   return true; }
+      if (evalStep === 'version-select') { setEvalStep('search');                                   return true; }
+      return false;
+    };
+
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
+    return () => sub.remove();
+  }, [privacyOpen, activeTab, historyStep, evalStep, allMatches]);
+
+  function getHeaderProps() {
+    if (activeTab === 'history') {
+      if (historyStep === 'detail')  return { title: 'Detalhes da avaliação', onBack: () => setHistoryStep('list') };
+      if (historyStep === 'outcome') return { title: 'Registrar desfecho', onBack: () => setHistoryStep('detail') };
+      return { title: 'Histórico' };
+    }
+    switch (evalStep) {
+      case 'search':         return { title: 'AutoValor', subtitle: 'Busca por marca, modelo e ano' };
+      case 'version-select': return { title: 'Selecione a versão', subtitle: vehicle ? `${vehicle.brand} ${vehicle.model}` : undefined, onBack: () => setEvalStep('search') };
+      case 'form':           return { title: 'Condições do veículo', subtitle: vehicle ? `${vehicle.brand} ${vehicle.model}` : undefined, onBack: () => setEvalStep(allMatches ? 'version-select' : 'search') };
+      case 'result':         return { title: 'Resultado', onBack: () => setEvalStep('form') };
+    }
+  }
+
+  // ---- Carregando sessão ----
+  if (authLoading) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.loadingRoot}>
+          <ActivityIndicator size="large" color={colors.ink} />
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+
+  // ---- Tela de login ----
+  if (REQUIRE_AUTH && !session) {
+    return (
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.root} edges={['top']}>
+          <StatusBar style="dark" />
+          <AuthScreen />
+        </SafeAreaView>
+      </SafeAreaProvider>
+    );
+  }
+
+  // ---- App principal ----
+  const showTabBar = !(activeTab === 'history' && historyStep !== 'list');
+
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.root} edges={['top']}>
+      {/* Sem edges — AppHeader cuida do top, TabBar cuida do bottom */}
+      <View style={styles.root}>
         <StatusBar style="light" />
-        <AppHeader {...headerProps()} onPrivacy={() => setPrivacyOpen(true)} />
+        <AppHeader {...getHeaderProps()} onPrivacy={() => setPrivacyOpen(true)} />
 
-        {step === 'search' && (
-          <SearchScreen onContinue={handleContinueFromSearch} />
-        )}
+        <View style={styles.content}>
+          {activeTab === 'evaluate' && (
+            <>
+              {evalStep === 'search' && (
+                <SearchScreen onContinue={handleContinueFromSearch} hasTabBar />
+              )}
+              {evalStep === 'version-select' && allMatches && (
+                <VersionSelectionScreen kind={kind} allMatches={allMatches} onConfirm={handleVersionConfirmed} />
+              )}
+              {evalStep === 'form' && vehicle && (
+                <EvaluationFormScreen kind={kind} vehicle={vehicle} onResult={handleResult} />
+              )}
+              {evalStep === 'result' && vehicle && result && evalInput && (
+                <ResultScreen
+                  kind={kind}
+                  vehicle={vehicle}
+                  input={evalInput}
+                  result={result}
+                  plate={searchedPlate}
+                  sessionToken={sessionToken}
+                  onRestart={handleRestart}
+                  onSaved={() => setHistoryRefresh(n => n + 1)}
+                />
+              )}
+            </>
+          )}
 
-        {step === 'version-select' && allMatches && (
-          <VersionSelectionScreen
-            kind={kind}
-            allMatches={allMatches}
-            onConfirm={handleVersionConfirmed}
-          />
-        )}
+          {activeTab === 'history' && (
+            <>
+              {historyStep === 'list' && (
+                <HistoryScreen onSelectEvaluation={handleSelectEvaluation} refreshTrigger={historyRefresh} />
+              )}
+              {historyStep === 'detail' && selectedEvaluation && (
+                <EvaluationDetailScreen evaluation={selectedEvaluation} onRegisterOutcome={() => setHistoryStep('outcome')} />
+              )}
+              {historyStep === 'outcome' && selectedEvaluation && (
+                <OutcomeScreen evaluation={selectedEvaluation} onSaved={handleOutcomeSaved} />
+              )}
+            </>
+          )}
+        </View>
 
-        {step === 'form' && vehicle && (
-          <EvaluationFormScreen kind={kind} vehicle={vehicle} onResult={handleResult} />
-        )}
-
-        {step === 'result' && vehicle && result && (
-          <ResultScreen vehicle={vehicle} result={result} onRestart={handleRestart} />
-        )}
+        {showTabBar && <TabBar active={activeTab} onChange={handleTabChange} />}
 
         <PrivacyScreen visible={privacyOpen} onClose={() => setPrivacyOpen(false)} />
-      </SafeAreaView>
+      </View>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
+  root:        { flex: 1, backgroundColor: colors.background },
+  loadingRoot: { flex: 1, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
+  content:     { flex: 1 },
 });

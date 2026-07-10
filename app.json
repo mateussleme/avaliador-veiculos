@@ -1,35 +1,39 @@
 {
   "expo": {
-    "name": "Avaliador de Veículos",
+    "name": "AutoValor",
     "slug": "avaliador-veiculos",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "extra": {
+      "productionSourceMap": false
+    },
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#16243B"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "usesAppleSignIn": true,
+      "bundleIdentifier": "com.autovalor.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#16243B"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.autovalor.app"
     },
+    "scheme": "avaliadorveiculos",
+    "plugins": [
+      "expo-secure-store"
+    ],
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "extra": {
-      "eas": {
-        "projectId": "9fb54ae3-6ef5-4cd1-b193-f0ccd7ad84d6"
-      }
-    }
+    "newArchEnabled": true
   }
 }

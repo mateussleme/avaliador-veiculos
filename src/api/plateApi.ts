@@ -1,18 +1,20 @@
 import { FipeVehicleInfo, VehicleKind } from '../domain/types';
 import { ParsedPlateOrRenavam } from '../domain/plateValidation';
+import { supabase } from '../lib/supabase';
+import { getCachedPlate, setCachedPlate } from '../lib/plateCache';
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL ?? '';
 
-// Uma versão FIPE possível para o veículo consultado.
 export interface FipeVersionMatch {
   vehicle: FipeVehicleInfo;
-  isPrincipal: boolean; // sugestão do sistema (melhor match automático)
+  isPrincipal: boolean;
 }
 
 export interface PlateLookupResult {
   kind: VehicleKind;
-  vehicle: FipeVehicleInfo;          // versão principal (sugestão automática)
-  allMatches: FipeVersionMatch[];    // todas as versões FIPE retornadas
+  vehicle: FipeVehicleInfo;
+  allMatches: FipeVersionMatch[];
+  fromCache?: boolean; // true = resultado do cache, sem custo
 }
 
 export class PlateApiError extends Error {
@@ -27,16 +29,32 @@ export async function fetchVehicleByPlateOrRenavam(
 ): Promise<PlateLookupResult> {
   if (!BACKEND_URL) {
     throw new PlateApiError(
-      'Backend não configurado. Adicione EXPO_PUBLIC_BACKEND_URL no arquivo .env do app (ver README).'
+      'Backend não configurado. Adicione EXPO_PUBLIC_BACKEND_URL no .env do app.'
     );
+  }
+
+  // ---- Verifica cache antes de chamar a API paga ----
+  const cached = getCachedPlate(parsed.normalized);
+  if (cached) {
+    return { ...cached, fromCache: true };
+  }
+
+  const { data: { session } } = await supabase.auth.getSession();
+
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
   }
 
   let response: Response;
   try {
     response = await fetch(`${BACKEND_URL}/api/plate-lookup`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ placa: parsed.normalized }),
+      headers,
+      body: JSON.stringify({
+        placa: parsed.normalized,
+        queryType: parsed.type, // 'plate-old' | 'plate-mercosul' | 'renavam'
+      }),
     });
   } catch {
     throw new PlateApiError('Não foi possível conectar ao servidor. Verifique sua internet.');
@@ -44,10 +62,11 @@ export async function fetchVehicleByPlateOrRenavam(
 
   const data = await response.json().catch(() => ({}));
 
-  if (response.status === 402) throw new PlateApiError('Sem créditos na APIBrasil. Adicione saldo em app.apibrasil.io.');
-  if (response.status === 401) throw new PlateApiError('Token da APIBrasil inválido.');
+  if (response.status === 401) throw new PlateApiError('Sessão expirada. Faça login novamente.');
+  if (response.status === 402) throw new PlateApiError('Sem créditos no serviço de consulta. Entre em contato com o suporte.');
+  if (response.status === 429) throw new PlateApiError(data?.error ?? 'Limite de consultas atingido. Aguarde e tente novamente.');
   if (response.status === 404) throw new PlateApiError('Veículo não encontrado para essa placa.');
-  if (!response.ok) throw new PlateApiError(data?.error ?? 'Erro ao consultar o veículo.');
+  if (!response.ok)            throw new PlateApiError(data?.error ?? 'Erro ao consultar o veículo.');
 
   const vehicle = data?.vehicle;
   if (!vehicle?.brand || !vehicle?.model || !vehicle?.priceValue) {
@@ -56,7 +75,6 @@ export async function fetchVehicleByPlateOrRenavam(
 
   const kind: VehicleKind = data.kind === 'motorcycles' ? 'motorcycles' : 'cars';
 
-  // Constrói a lista de todos os matches (o backend agora devolve allMatches)
   const allMatches: FipeVersionMatch[] = Array.isArray(data.allMatches)
     ? data.allMatches.map((m: { vehicle: FipeVehicleInfo; isPrincipal: boolean }) => ({
         vehicle: m.vehicle as FipeVehicleInfo,
@@ -64,5 +82,10 @@ export async function fetchVehicleByPlateOrRenavam(
       }))
     : [{ vehicle: vehicle as FipeVehicleInfo, isPrincipal: true }];
 
-  return { kind, vehicle: vehicle as FipeVehicleInfo, allMatches };
+  const result: PlateLookupResult = { kind, vehicle: vehicle as FipeVehicleInfo, allMatches };
+
+  // Salva no cache para consultas futuras da mesma placa nesta sessão
+  setCachedPlate(parsed.normalized, result);
+
+  return result;
 }

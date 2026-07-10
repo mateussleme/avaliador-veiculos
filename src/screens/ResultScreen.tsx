@@ -1,16 +1,22 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
 import { GaugeBar } from '../components/GaugeBar';
 import { ADJUSTMENT_RANGE } from '../domain/evaluationEngine';
 import { colors, radius, spacing, type } from '../theme/tokens';
-import { AdjustmentSeverity, EvaluationResult, FipeVehicleInfo } from '../domain/types';
+import { AdjustmentSeverity, EvaluationInput, EvaluationResult, FipeVehicleInfo, VehicleKind } from '../domain/types';
+import { saveEvaluation } from '../services/evaluationService';
 
 interface ResultScreenProps {
+  kind: VehicleKind;
   vehicle: FipeVehicleInfo;
+  input: EvaluationInput;
   result: EvaluationResult;
+  plate?: string;
+  sessionToken?: string | null; // JWT do Supabase — null quando REQUIRE_AUTH=false
   onRestart: () => void;
+  onSaved?: (evaluationId: string) => void;
 }
 
 function formatCurrency(value: number): string {
@@ -34,7 +40,31 @@ function severityColor(severity: AdjustmentSeverity) {
   }
 }
 
-export function ResultScreen({ vehicle, result, onRestart }: ResultScreenProps) {
+export function ResultScreen({ kind, vehicle, input, result, plate, sessionToken, onRestart, onSaved }: ResultScreenProps) {
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  async function handleSave() {
+    if (!sessionToken) {
+      // Modo sem auth: salvar vai falhar sem JWT. Mostra mensagem orientando.
+      Alert.alert(
+        'Login necessário',
+        'Para salvar avaliações e registrar desfechos, ative o login no app (REQUIRE_AUTH = true no App.tsx).'
+      );
+      return;
+    }
+    setSaving(true);
+    try {
+      const id = await saveEvaluation({ kind, vehicle, input, result, plate });
+      setSaved(true);
+      onSaved?.(id);
+    } catch (err: any) {
+      Alert.alert('Erro ao salvar', err.message ?? 'Verifique sua conexão e tente novamente.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
       <Text style={styles.vehicleName}>
@@ -46,8 +76,10 @@ export function ResultScreen({ vehicle, result, onRestart }: ResultScreenProps) 
       </Text>
 
       <Card style={styles.heroCard}>
-        <SectionLabel>Valor estimado da avaliação</SectionLabel>
-        <Text style={styles.estimatedValue}>{formatCurrency(result.estimatedValue)}</Text>
+
+        {/* ---- Bloco principal: Oferta de Compra ---- */}
+        <SectionLabel>Oferta de compra</SectionLabel>
+        <Text style={styles.estimatedValue}>{formatCurrency(result.finalOfferValue)}</Text>
         <Text style={styles.positionLabel}>{result.positionLabel}</Text>
 
         <GaugeBar
@@ -56,29 +88,48 @@ export function ResultScreen({ vehicle, result, onRestart }: ResultScreenProps) 
           max={ADJUSTMENT_RANGE.max}
         />
 
-        <View style={styles.compareRow}>
-          <View>
+        {/* ---- Linha de preços secundários ---- */}
+        <View style={styles.priceRowThree}>
+          <View style={styles.priceBlock}>
             <Text style={styles.compareLabel}>Tabela FIPE</Text>
             <Text style={styles.compareValue}>{formatCurrency(result.baseValue)}</Text>
           </View>
-          <View>
+          <View style={styles.priceBlock}>
             <Text style={styles.compareLabel}>
               Padrão (-{result.baseDiscountPercent}%{result.discountSource === 'table' ? ' tabela' : ' padrão'})
             </Text>
             <Text style={styles.compareValue}>{formatCurrency(result.standardValue)}</Text>
           </View>
-          <View style={styles.compareRight}>
+          <View style={[styles.priceBlock, styles.priceBlockRight]}>
             <Text style={styles.compareLabel}>Ajuste</Text>
-            <Text
-              style={[
-                styles.compareValue,
-                { color: result.adjustmentPercent < 0 ? colors.danger : colors.good },
-              ]}
-            >
-              {result.adjustmentPercent > 0 ? '+' : ''}
-              {result.adjustmentPercent.toFixed(1)}%
+            <Text style={[
+              styles.compareValue,
+              { color: result.adjustmentPercent < 0 ? colors.danger : colors.good },
+            ]}>
+              {result.adjustmentPercent > 0 ? '+' : ''}{result.adjustmentPercent.toFixed(1)}%
             </Text>
           </View>
+        </View>
+
+        {/* ---- Custo de preparação (se houver) ---- */}
+        {result.preparationCost > 0 && (
+          <View style={styles.prepCostRow}>
+            <Text style={styles.prepCostLabel}>
+              Custo de preparação (peças/rodas)
+            </Text>
+            <Text style={styles.prepCostValue}>
+              − {formatCurrency(result.preparationCost)}
+            </Text>
+          </View>
+        )}
+
+        {/* ---- Repasse ---- */}
+        <View style={styles.repasseCard}>
+          <View>
+            <Text style={styles.repasseLabel}>Valor para Repasse</Text>
+            <Text style={styles.repasseNote}>92% da oferta de compra</Text>
+          </View>
+          <Text style={styles.repasseValue}>{formatCurrency(result.repasseValue)}</Text>
         </View>
 
         {result.discountSource === 'table' && result.discountMatchedModel ? (
@@ -88,8 +139,7 @@ export function ResultScreen({ vehicle, result, onRestart }: ResultScreenProps) 
           </Text>
         ) : (
           <Text style={styles.discountSourceNote}>
-            Desconto padrão de {result.baseDiscountPercent}% aplicado (modelo não encontrado na
-            tabela).
+            Desconto padrão de {result.baseDiscountPercent}% (modelo não encontrado na tabela).
           </Text>
         )}
       </Card>
@@ -120,6 +170,19 @@ export function ResultScreen({ vehicle, result, onRestart }: ResultScreenProps) 
           garante o valor final de venda ou compra.
         </Text>
       </Card>
+
+      {saved ? (
+        <Card style={styles.savedCard}>
+          <Text style={styles.savedText}>✓ Avaliação salva no histórico</Text>
+        </Card>
+      ) : (
+        <Button
+          label="Salvar avaliação"
+          onPress={handleSave}
+          loading={saving}
+          style={styles.saveButton}
+        />
+      )}
 
       <Button label="Nova avaliação" variant="secondary" onPress={onRestart} style={styles.restartButton} />
     </ScrollView>
@@ -156,7 +219,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
     marginBottom: spacing.sm,
   },
-  compareRow: {
+  priceRowThree: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: spacing.lg,
@@ -164,11 +227,71 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
+  priceBlock: {
+    flex: 1,
+  },
+  priceBlockRight: {
+    alignItems: 'flex-end',
+  },
+  prepCostRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.dangerBg,
+  },
+  prepCostLabel: {
+    fontSize: type.caption.fontSize,
+    color: colors.danger,
+    flex: 1,
+    paddingRight: spacing.sm,
+  },
+  prepCostValue: {
+    fontSize: type.h2.fontSize,
+    fontWeight: '700',
+    color: colors.danger,
+  },
+  repasseCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.infoBg,
+    borderRadius: radius.md,
+  },
+  repasseLabel: {
+    fontSize: type.body.fontSize,
+    fontWeight: '700',
+    color: colors.info,
+  },
+  repasseNote: {
+    fontSize: type.caption.fontSize,
+    color: colors.info,
+    opacity: 0.8,
+    marginTop: 2,
+  },
+  repasseValue: {
+    fontSize: type.h1.fontSize,
+    fontWeight: '700',
+    color: colors.info,
+  },
   discountSourceNote: {
     fontSize: type.caption.fontSize,
     color: colors.textTertiary,
     marginTop: spacing.sm,
     lineHeight: 16,
+  },
+  // legados mantidos
+  compareRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.lg,
+    paddingTop: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
   compareRight: {
     alignItems: 'flex-end',
@@ -231,5 +354,19 @@ const styles = StyleSheet.create({
   },
   restartButton: {
     marginBottom: spacing.lg,
+  },
+  saveButton: {
+    marginBottom: spacing.sm,
+  },
+  savedCard: {
+    backgroundColor: colors.goodBg,
+    borderColor: colors.good,
+    marginBottom: spacing.sm,
+    alignItems: 'center',
+  },
+  savedText: {
+    color: colors.good,
+    fontWeight: '700',
+    fontSize: type.body.fontSize,
   },
 });

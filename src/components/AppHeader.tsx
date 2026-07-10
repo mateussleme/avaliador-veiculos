@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, type } from '../theme/tokens';
 
 interface AppHeaderProps {
@@ -10,11 +11,13 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ title, subtitle, onBack, onPrivacy }: AppHeaderProps) {
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + spacing.sm }]}>
       <View style={styles.row}>
         {onBack ? (
-          <Pressable onPress={onBack} hitSlop={12} style={styles.sideButton}>
+          <Pressable onPress={onBack} hitSlop={20} style={styles.sideButton}>
             <Text style={styles.backArrow}>{'←'}</Text>
           </Pressable>
         ) : (
@@ -22,18 +25,14 @@ export function AppHeader({ title, subtitle, onBack, onPrivacy }: AppHeaderProps
         )}
 
         <View style={styles.titleWrap}>
-          <Text style={styles.title} numberOfLines={1}>
-            {title}
-          </Text>
+          <Text style={styles.title} numberOfLines={1}>{title}</Text>
           {subtitle ? (
-            <Text style={styles.subtitle} numberOfLines={1}>
-              {subtitle}
-            </Text>
+            <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
           ) : null}
         </View>
 
         {onPrivacy ? (
-          <Pressable onPress={onPrivacy} hitSlop={12} style={styles.sideButton}>
+          <Pressable onPress={onPrivacy} hitSlop={20} style={styles.sideButton}>
             <Text style={styles.privacyLink}>Privacidade</Text>
           </Pressable>
         ) : (
@@ -55,13 +54,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sideButton: {
-    minWidth: 36,
+    minWidth: 44,
+    minHeight: 44,
     alignItems: 'flex-start',
     justifyContent: 'center',
   },
   backArrow: {
     color: colors.textOnInk,
-    fontSize: 22,
+    fontSize: 26,
   },
   titleWrap: {
     flex: 1,

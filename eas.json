@@ -1,0 +1,43 @@
+{
+  "cli": {
+    "version": ">= 12.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "NODE_ENV": "development",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://oraztujgkuknsgovdnqa.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yYXp0dWpna3VrbnNnb3ZkbnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NzY5NDIsImV4cCI6MjA5ODI1Mjk0Mn0.Rkf_-Jk5H1IB2Khg8z1dDeIxT6Vg-Z_9xPA8hdQEolk",
+        "EXPO_PUBLIC_BACKEND_URL": "https://avaliador-backend-eight.vercel.app",
+        "EXPO_PUBLIC_FIPE_TOKEN": ""
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "NODE_ENV": "production",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://oraztujgkuknsgovdnqa.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yYXp0dWpna3VrbnNnb3ZkbnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NzY5NDIsImV4cCI6MjA5ODI1Mjk0Mn0.Rkf_-Jk5H1IB2Khg8z1dDeIxT6Vg-Z_9xPA8hdQEolk",
+        "EXPO_PUBLIC_BACKEND_URL": "https://avaliador-backend-eight.vercel.app",
+        "EXPO_PUBLIC_FIPE_TOKEN": ""
+      }
+    },
+    "production": {
+      "env": {
+        "NODE_ENV": "production",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://oraztujgkuknsgovdnqa.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yYXp0dWpna3VrbnNnb3ZkbnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NzY5NDIsImV4cCI6MjA5ODI1Mjk0Mn0.Rkf_-Jk5H1IB2Khg8z1dDeIxT6Vg-Z_9xPA8hdQEolk",
+        "EXPO_PUBLIC_BACKEND_URL": "https://avaliador-backend-eight.vercel.app",
+        "EXPO_PUBLIC_FIPE_TOKEN": ""
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

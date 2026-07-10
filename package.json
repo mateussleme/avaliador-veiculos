@@ -14,7 +14,15 @@
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-safe-area-context": "~5.6.0",
-    "@expo/vector-icons": "^15.0.3"
+    "@expo/vector-icons": "^15.0.3",
+    "@supabase/supabase-js": "^2.45.4",
+    "@react-native-async-storage/async-storage": "^2.1.0",
+    "expo-secure-store": "~15.0.7",
+    "expo-web-browser": "~15.0.8",
+    "expo-auth-session": "~7.0.8",
+    "expo-apple-authentication": "~8.0.7",
+    "expo-crypto": "~15.0.7",
+    "react-native-url-polyfill": "^2.0.0"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",

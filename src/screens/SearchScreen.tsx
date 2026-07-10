@@ -8,11 +8,13 @@ import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
 import { OptionGroup } from '../components/OptionGroup';
 import { SelectField, SelectOption } from '../components/SelectField';
+import { useBottomPadding } from '../hooks/useBottomPadding';
 import { colors, spacing, type } from '../theme/tokens';
 import { FipeVehicleInfo, VehicleKind } from '../domain/types';
 
 interface SearchScreenProps {
-  onContinue: (kind: VehicleKind, vehicle: FipeVehicleInfo, allMatches?: FipeVersionMatch[]) => void;
+  onContinue: (kind: VehicleKind, vehicle: FipeVehicleInfo, allMatches?: FipeVersionMatch[], plate?: string) => void;
+  hasTabBar?: boolean;
 }
 
 type SearchMode = 'manual' | 'plate';
@@ -294,7 +296,12 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
 
       <Button
         label="Continuar para a avaliação"
-        onPress={() => resolvedKind && resolvedVehicle && onContinue(resolvedKind, resolvedVehicle, mode === 'plate' && plateResult ? plateResult.allMatches : undefined)}
+        onPress={() => resolvedKind && resolvedVehicle && onContinue(
+          resolvedKind,
+          resolvedVehicle,
+          mode === 'plate' && plateResult ? plateResult.allMatches : undefined,
+          mode === 'plate' && parsedPlate ? parsedPlate.normalized : undefined
+        )}
         disabled={!resolvedKind || !resolvedVehicle}
         style={styles.continueButton}
       />

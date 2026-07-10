@@ -9,7 +9,12 @@ import {
   View,
 } from 'react-native';
 import { evaluateVehicle, previewMileageAdjustment } from '../domain/evaluationEngine';
-import { EvaluationInput, EvaluationResult, FipeVehicleInfo, VehicleKind } from '../domain/types';
+import {
+  EvaluationInput,
+  EvaluationResult,
+  FipeVehicleInfo,
+  VehicleKind,
+} from '../domain/types';
 import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
 import { OptionGroup, ToggleRow } from '../components/OptionGroup';
@@ -18,52 +23,55 @@ import { colors, spacing, type } from '../theme/tokens';
 interface EvaluationFormScreenProps {
   kind: VehicleKind;
   vehicle: FipeVehicleInfo;
-  onResult: (result: EvaluationResult) => void;
+  onResult: (result: EvaluationResult, input: EvaluationInput) => void;
 }
 
 const MOTO_TIRE_OPTIONS: { value: '0' | '1' | '2'; label: string }[] = [
-  { value: '0', label: 'Nenhum pneu novo' },
   { value: '1', label: '1 pneu novo' },
-  { value: '2', label: '2 pneus novos (par completo)' },
+  { value: '2', label: '2 pneus novos' },
 ];
 
-// Lê algo como "1,2,3,4" ou "1, 3" e devolve quantos pneus distintos e
-// válidos (1 a 4) foram informados. Texto inválido/fora da faixa é ignorado.
-function parseCarTireText(text: string): number {
-  const found = new Set<number>();
-  text.split(',').forEach((chunk) => {
-    const n = parseInt(chunk.trim(), 10);
-    if (Number.isInteger(n) && n >= 1 && n <= 4) {
-      found.add(n);
-    }
-  });
-  return found.size;
-}
-
 export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationFormScreenProps) {
-  const [mileageText, setMileageText] = useState('');
-  const [mileageError, setMileageError] = useState<string | null>(null);
+  const [mileageText, setMileageText]             = useState('');
+  const [mileageError, setMileageError]           = useState<string | null>(null);
 
-  const [motoTireValue, setMotoTireValue] = useState<'0' | '1' | '2'>('0');
-  const [carTireText, setCarTireText] = useState('');
+  // Pneus
+  const [hasTires, setHasTires]                   = useState(false);
+  const [motoTireValue, setMotoTireValue]         = useState<'0' | '1' | '2'>('1');
+  const [carTireText, setCarTireText]             = useState('');
 
-  const [hadDealerService, setHadDealerService] = useState(false);
-  const [hasRepaint, setHasRepaint] = useState(false);
+  // Revisão
+  const [hadDealerService, setHadDealerService]   = useState(false);
 
-  const carTireCount = useMemo(() => parseCarTireText(carTireText), [carTireText]);
-  const newTireCount = kind === 'motorcycles' ? Number(motoTireValue) : carTireCount;
+  // Repintura
+  const [hasRepaint, setHasRepaint]               = useState(false);
+  const [repaintPiecesText, setRepaintPiecesText] = useState('');
+  const [repaintWheelsText, setRepaintWheelsText] = useState('');
+
   const maxTires = kind === 'motorcycles' ? 2 : 4;
+
+  const parsedCarTires = useMemo(() => {
+    const n = parseInt(carTireText, 10);
+    return Number.isFinite(n) ? Math.min(Math.max(n, 0), 4) : 0;
+  }, [carTireText]);
+
+  const newTireCount = kind === 'motorcycles'
+    ? Number(motoTireValue)
+    : parsedCarTires;
+
+  const repaintPieces = parseInt(repaintPiecesText, 10) || 0;
+  const repaintWheels = parseInt(repaintWheelsText, 10) || 0;
+  const repaintCostPreview = repaintPieces * 800 + repaintWheels * 300;
 
   const mileagePreview = useMemo(() => {
     const mileage = Number(mileageText.replace(/\D/g, ''));
-    if (!mileageText || Number.isNaN(mileage) || mileage <= 0) return null;
+    if (!mileage || mileage <= 0) return null;
     return previewMileageAdjustment(mileage, vehicle.modelYear);
   }, [mileageText, vehicle.modelYear]);
 
   function handleSubmit() {
     const mileage = Number(mileageText.replace(/\D/g, ''));
-
-    if (!mileageText || Number.isNaN(mileage) || mileage <= 0) {
+    if (!mileageText || mileage <= 0) {
       setMileageError('Informe a quilometragem atual do veículo.');
       return;
     }
@@ -73,12 +81,15 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
       vehicle,
       kind,
       currentMileageKm: mileage,
-      newTireCount,
+      hasTires,
+      newTireCount: hasTires ? newTireCount : 0,
       hadDealerService,
       hasRepaint,
+      repaintPiecesCount: hasRepaint ? repaintPieces : 0,
+      repaintWheelsCount: hasRepaint ? repaintWheels : 0,
     };
 
-    onResult(evaluateVehicle(input));
+    onResult(evaluateVehicle(input), input);
   }
 
   return (
@@ -88,18 +99,16 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.intro}>
-          O padrão de avaliação parte da tabela FIPE com 20% de desconto fixo. Os itens abaixo
+          O padrão de avaliação parte da tabela FIPE com desconto por modelo. Os itens abaixo
           ajustam esse padrão pra cima ou pra baixo.
         </Text>
 
+        {/* Quilometragem */}
         <Card style={styles.card}>
           <SectionLabel>Quilometragem atual (km)</SectionLabel>
           <TextInput
             value={mileageText}
-            onChangeText={(t) => {
-              setMileageText(t);
-              setMileageError(null);
-            }}
+            onChangeText={(t) => { setMileageText(t); setMileageError(null); }}
             placeholder="Ex: 65000"
             placeholderTextColor={colors.textTertiary}
             keyboardType="number-pad"
@@ -107,63 +116,78 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
           />
           {mileageError ? <Text style={styles.fieldError}>{mileageError}</Text> : null}
           {mileagePreview ? (
-            <Text style={styles.fieldNote}>
-              ≈ {Math.round(mileagePreview.kmPerYear).toLocaleString('pt-BR')} km/ano para esse
-              veículo →{' '}
-              <Text
-                style={
-                  mileagePreview.percent >= 0 ? styles.fieldNotePositive : styles.fieldNoteNegative
-                }
-              >
-                {mileagePreview.percent > 0 ? '+' : ''}
-                {mileagePreview.percent}% no padrão de avaliação
-              </Text>
-            </Text>
-          ) : (
-            <Text style={styles.fieldNote}>
-              O ajuste depende da média de km rodados por ano de uso, não só do total.
-            </Text>
-          )}
-        </Card>
-
-        <Card style={styles.card}>
-          <SectionLabel>Pneus novos</SectionLabel>
-
-          {kind === 'motorcycles' ? (
-            <OptionGroup options={MOTO_TIRE_OPTIONS} value={motoTireValue} onChange={setMotoTireValue} />
-          ) : (
-            <>
-              <TextInput
-                value={carTireText}
-                onChangeText={setCarTireText}
-                placeholder="Ex: 1,2,3,4"
-                placeholderTextColor={colors.textTertiary}
-                keyboardType="numbers-and-punctuation"
-                style={styles.input}
-              />
+            mileagePreview.isCurrentYear ? (
               <Text style={styles.fieldNote}>
-                Liste de 1 a 4, separados por vírgula, indicando quantos e quais pneus estão
-                novos. Ex: "1,3" para dois pneus novos, "1,2,3,4" para o jogo completo.
+                Referência para este período: {mileagePreview.expectedKm.toLocaleString('pt-BR')} km →{' '}
+                <Text style={mileagePreview.percent >= 0 ? styles.fieldNotePositive : styles.fieldNoteNegative}>
+                  {mileagePreview.percent > 0 ? '+' : ''}{mileagePreview.percent}%
+                </Text>
               </Text>
-            </>
-          )}
-
-          <View style={styles.tireSummary}>
-            <Text style={styles.tireSummaryText}>
-              {newTireCount} de {maxTires} pneus novos considerados
+            ) : (
+              <Text style={styles.fieldNote}>
+                ≈ {Math.round(mileagePreview.kmPerYear).toLocaleString('pt-BR')} km/ano →{' '}
+                <Text style={mileagePreview.percent >= 0 ? styles.fieldNotePositive : styles.fieldNoteNegative}>
+                  {mileagePreview.percent > 0 ? '+' : ''}{mileagePreview.percent}%
+                </Text>
+              </Text>
+            )
+          ) : (
+            <Text style={styles.fieldNote}>
+              O ajuste depende da média de km/ano, não só do total.
             </Text>
-          </View>
+          )}
         </Card>
 
+        {/* Pneus */}
+        <Card style={styles.card}>
+          <SectionLabel>Pneus</SectionLabel>
+          <ToggleRow
+            label="Veículo possui pneus novos?"
+            value={hasTires}
+            onChange={setHasTires}
+          />
+          {hasTires && (
+            <View style={styles.subField}>
+              <Text style={styles.subLabel}>Quantos pneus novos? (máx. {maxTires})</Text>
+              {kind === 'motorcycles' ? (
+                <OptionGroup
+                  options={MOTO_TIRE_OPTIONS}
+                  value={motoTireValue}
+                  onChange={setMotoTireValue}
+                />
+              ) : (
+                <TextInput
+                  value={carTireText}
+                  onChangeText={setCarTireText}
+                  placeholder={`Digite 1 a ${maxTires}`}
+                  placeholderTextColor={colors.textTertiary}
+                  keyboardType="number-pad"
+                  style={styles.input}
+                />
+              )}
+              {hasTires && newTireCount > 0 && (
+                <Text style={styles.fieldNote}>
+                  {newTireCount} de {maxTires} pneus novos considerados.
+                </Text>
+              )}
+            </View>
+          )}
+        </Card>
+
+        {/* Revisão na CSS */}
         <Card style={styles.card}>
           <SectionLabel>Revisão na concessionária</SectionLabel>
           <ToggleRow
-            label="O veículo fez revisão na concessionária?"
+            label="Fez revisão na concessionária?"
             value={hadDealerService}
             onChange={setHadDealerService}
           />
+          <Text style={styles.fieldNote}>
+            {hadDealerService ? '+1% por revisão na CSS.' : '-4% por ausência de revisão na CSS.'}
+          </Text>
         </Card>
 
+        {/* Repintura */}
         <Card style={styles.card}>
           <SectionLabel>Repintura</SectionLabel>
           <ToggleRow
@@ -171,6 +195,43 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
             value={hasRepaint}
             onChange={setHasRepaint}
           />
+
+          {hasRepaint && (
+            <View style={styles.subField}>
+              <Text style={styles.subLabel}>Número de peças para pintar (R$800 cada)</Text>
+              <TextInput
+                value={repaintPiecesText}
+                onChangeText={setRepaintPiecesText}
+                placeholder="Ex: 2"
+                placeholderTextColor={colors.textTertiary}
+                keyboardType="number-pad"
+                style={styles.input}
+              />
+
+              <Text style={[styles.subLabel, { marginTop: spacing.md }]}>
+                Número de rodas para pintar (R$300 cada)
+              </Text>
+              <TextInput
+                value={repaintWheelsText}
+                onChangeText={setRepaintWheelsText}
+                placeholder="Ex: 4"
+                placeholderTextColor={colors.textTertiary}
+                keyboardType="number-pad"
+                style={styles.input}
+              />
+
+              {repaintCostPreview > 0 && (
+                <View style={styles.costPreview}>
+                  <Text style={styles.costPreviewText}>
+                    Custo de preparação estimado:{' '}
+                    <Text style={styles.costPreviewValue}>
+                      R$ {repaintCostPreview.toLocaleString('pt-BR')}
+                    </Text>
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
         </Card>
 
         <Button label="Calcular avaliação" onPress={handleSubmit} style={styles.submitButton} />
@@ -180,58 +241,43 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
-  scroll: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
-  },
+  flex: { flex: 1 },
+  scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
   intro: {
     fontSize: type.body.fontSize,
     lineHeight: type.body.lineHeight,
     color: colors.textSecondary,
     marginBottom: spacing.lg,
   },
-  card: {
-    marginBottom: spacing.md,
-  },
+  card: { marginBottom: spacing.md },
   input: {
     fontSize: type.h2.fontSize,
     color: colors.textPrimary,
     paddingVertical: spacing.sm,
   },
-  fieldError: {
-    color: colors.danger,
-    fontSize: type.caption.fontSize,
-    marginTop: spacing.xs,
-  },
-  fieldNote: {
-    fontSize: type.caption.fontSize,
-    color: colors.textTertiary,
-    marginTop: spacing.xs,
-    lineHeight: 16,
-  },
-  fieldNotePositive: {
-    fontWeight: '700',
-    color: colors.good,
-  },
-  fieldNoteNegative: {
-    fontWeight: '700',
-    color: colors.danger,
-  },
-  tireSummary: {
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
+  fieldError: { color: colors.danger, fontSize: type.caption.fontSize, marginTop: spacing.xs },
+  fieldNote: { fontSize: type.caption.fontSize, color: colors.textTertiary, marginTop: spacing.xs, lineHeight: 16 },
+  fieldNotePositive: { fontWeight: '700', color: colors.good },
+  fieldNoteNegative: { fontWeight: '700', color: colors.danger },
+  subField: {
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
-  tireSummaryText: {
+  subLabel: {
     fontSize: type.caption.fontSize,
     fontWeight: '600',
     color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
-  submitButton: {
-    marginTop: spacing.md,
+  costPreview: {
+    marginTop: spacing.sm,
+    padding: spacing.sm,
+    backgroundColor: colors.dangerBg,
+    borderRadius: 8,
   },
+  costPreviewText: { fontSize: type.caption.fontSize, color: colors.danger },
+  costPreviewValue: { fontWeight: '700' },
+  submitButton: { marginTop: spacing.md },
 });
