@@ -32,39 +32,39 @@ export function PrivacyScreen({ visible, onClose }: PrivacyScreenProps) {
             <SectionLabel>O que fica só no seu celular</SectionLabel>
             <Text style={styles.body}>
               Quilometragem, estado dos pneus, histórico de manutenção e os demais dados que você
-              preenche na avaliação ficam apenas na tela, durante o uso do app. Nesta versão eles
-              não são enviados a nenhum servidor nem salvos depois que você fecha o app.
+              preenche na avaliação ficam no aparelho durante o uso. Eles só são enviados a um
+              servidor se você optar por salvar a avaliação no histórico (requer login).
             </Text>
           </Card>
 
           <Card style={styles.card}>
-            <SectionLabel>Campo de placa/Renavam (ainda inativo)</SectionLabel>
+            <SectionLabel>Consulta por placa</SectionLabel>
             <Text style={styles.body}>
-              A tela de busca já tem um campo para placa ou Renavam, preparado para a próxima
-              fase. Hoje ele só valida o formato no próprio celular — nenhuma placa ou Renavam
-              digitado é enviado a qualquer servidor ainda. Quando essa busca for ativada de
-              verdade, esta tela será atualizada antes, explicando exatamente quem recebe esse
-              dado e por quê.
+              Ao buscar por placa, a placa digitada é enviada ao nosso servidor, que consulta um
+              provedor de dados veiculares (APIBrasil) para identificar o veículo e o valor FIPE.
+              A placa não é armazenada em banco de dados — é usada apenas para essa consulta.
+              Um cache temporário no aparelho evita consultas repetidas da mesma placa na mesma
+              sessão de uso.
             </Text>
           </Card>
 
           <Card style={styles.card}>
-            <SectionLabel>O que ainda não existe nesta versão</SectionLabel>
+            <SectionLabel>Login e histórico (opcional)</SectionLabel>
             <Text style={styles.body}>
-              Consulta por placa/Renavam conectada a uma API real, login, histórico salvo na
-              nuvem e exportação de relatório fazem parte de uma fase futura. Quando forem
-              adicionados, esta tela será atualizada antes de qualquer coleta começar, com um
-              pedido de consentimento claro.
+              Se você criar uma conta, as avaliações que optar por salvar ficam vinculadas ao
+              seu usuário em nosso banco de dados (Supabase), protegidas por controle de acesso
+              em nível de linha — cada usuário só acessa os próprios dados. Você pode excluir
+              suas avaliações a qualquer momento.
             </Text>
           </Card>
 
           <Card style={styles.card}>
-            <SectionLabel>Seus direitos</SectionLabel>
+            <SectionLabel>Seus direitos (LGPD)</SectionLabel>
             <Text style={styles.body}>
-              Como nenhum dado pessoal é coletado ou armazenado nesta versão, não há dados seus
-              para acessar, corrigir ou excluir em um servidor — eles simplesmente não saem do seu
-              aparelho. Isso muda apenas quando funcionalidades futuras forem ativadas, sempre
-              com aviso prévio.
+              Conforme a Lei 13.709/2018, você pode solicitar acesso, correção ou exclusão dos
+              seus dados a qualquer momento. Dados de avaliações salvas podem ser excluídos
+              diretamente no app. Para exclusão completa da conta, entre em contato pelo canal
+              de suporte.
             </Text>
           </Card>
         </ScrollView>

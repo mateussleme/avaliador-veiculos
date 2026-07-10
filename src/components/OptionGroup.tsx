@@ -74,11 +74,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceAlt,
   },
   chipSelected: {
     backgroundColor: colors.ink,
-    borderColor: colors.gold,
+    borderColor: colors.ink,
   },
   chipLabel: {
     fontSize: 14,

@@ -206,11 +206,10 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     marginBottom: spacing.lg,
-    borderColor: colors.gold,
   },
   estimatedValue: {
-    fontSize: 38,
-    fontWeight: '800',
+    fontSize: 34,
+    fontWeight: '700',
     color: colors.ink,
     marginTop: 2,
   },
@@ -261,9 +260,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     padding: spacing.md,
     backgroundColor: colors.infoBg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: radius.md,
   },
   repasseLabel: {
     fontSize: type.body.fontSize,

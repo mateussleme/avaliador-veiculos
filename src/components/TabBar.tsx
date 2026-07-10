@@ -41,16 +41,10 @@ export function TabBar({ active, onChange }: TabBarProps) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-  backgroundColor: colors.surface,
-  borderTopWidth: 1,
-  borderTopColor: colors.border,
-  paddingTop: spacing.sm,
-
-  shadowColor: '#16243B',
-  shadowOpacity: 0.08,
-  shadowRadius: 12,
-  shadowOffset: { width: 0, height: -4 },
-  elevation: 8,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: spacing.sm,
   },
   tab: {
     flex: 1,
@@ -62,13 +56,13 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     marginBottom: 2,
   },
-  iconActive: { color: colors.gold },
+  iconActive: { color: colors.ink },
   label: {
     fontSize: type.caption.fontSize,
     color: colors.textTertiary,
   },
   labelActive: {
     color: colors.ink,
-    fontWeight: '700',
+    fontWeight: '600',
   },
 });

@@ -1,5 +1,5 @@
 import { FipeVehicleInfo, VehicleKind } from '../domain/types';
-import { ParsedPlateOrRenavam } from '../domain/plateValidation';
+import { ParsedPlate } from '../domain/plateValidation';
 import { supabase } from '../lib/supabase';
 import { getCachedPlate, setCachedPlate } from '../lib/plateCache';
 
@@ -24,8 +24,8 @@ export class PlateApiError extends Error {
   }
 }
 
-export async function fetchVehicleByPlateOrRenavam(
-  parsed: ParsedPlateOrRenavam
+export async function fetchVehicleByPlate(
+  parsed: ParsedPlate
 ): Promise<PlateLookupResult> {
   if (!BACKEND_URL) {
     throw new PlateApiError(
@@ -51,10 +51,7 @@ export async function fetchVehicleByPlateOrRenavam(
     response = await fetch(`${BACKEND_URL}/api/plate-lookup`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({
-        placa: parsed.normalized,
-        queryType: parsed.type, // 'plate-old' | 'plate-mercosul' | 'renavam'
-      }),
+      body: JSON.stringify({ placa: parsed.normalized }),
     });
   } catch {
     throw new PlateApiError('Não foi possível conectar ao servidor. Verifique sua internet.');

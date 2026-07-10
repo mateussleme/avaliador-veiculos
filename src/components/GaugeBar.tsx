@@ -66,7 +66,6 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: radius.pill,
     overflow: 'visible',
-    backgroundColor: colors.surfaceAlt,
   },
   zone: {
     height: 10,
@@ -77,7 +76,7 @@ const styles = StyleSheet.create({
     width: MARKER_SIZE,
     height: MARKER_SIZE,
     borderRadius: MARKER_SIZE,
-    backgroundColor: colors.gold,
+    backgroundColor: colors.ink,
     borderWidth: 2,
     borderColor: colors.surface,
   },

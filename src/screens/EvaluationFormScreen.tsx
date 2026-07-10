@@ -26,9 +26,16 @@ interface EvaluationFormScreenProps {
   onResult: (result: EvaluationResult, input: EvaluationInput) => void;
 }
 
-const MOTO_TIRE_OPTIONS: { value: '0' | '1' | '2'; label: string }[] = [
+const MOTO_TIRE_OPTIONS: { value: '1' | '2'; label: string }[] = [
   { value: '1', label: '1 pneu novo' },
   { value: '2', label: '2 pneus novos' },
+];
+
+const CAR_TIRE_OPTIONS: { value: '1' | '2' | '3' | '4'; label: string }[] = [
+  { value: '1', label: '1 pneu' },
+  { value: '2', label: '2 pneus' },
+  { value: '3', label: '3 pneus' },
+  { value: '4', label: '4 pneus' },
 ];
 
 export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationFormScreenProps) {
@@ -37,8 +44,8 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
 
   // Pneus
   const [hasTires, setHasTires]                   = useState(false);
-  const [motoTireValue, setMotoTireValue]         = useState<'0' | '1' | '2'>('1');
-  const [carTireText, setCarTireText]             = useState('');
+  const [motoTireValue, setMotoTireValue]         = useState<'1' | '2'>('1');
+  const [carTireValue, setCarTireValue]           = useState<'1' | '2' | '3' | '4'>('4');
 
   // Revisão
   const [hadDealerService, setHadDealerService]   = useState(false);
@@ -50,14 +57,9 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
 
   const maxTires = kind === 'motorcycles' ? 2 : 4;
 
-  const parsedCarTires = useMemo(() => {
-    const n = parseInt(carTireText, 10);
-    return Number.isFinite(n) ? Math.min(Math.max(n, 0), 4) : 0;
-  }, [carTireText]);
-
   const newTireCount = kind === 'motorcycles'
     ? Number(motoTireValue)
-    : parsedCarTires;
+    : Number(carTireValue);
 
   const repaintPieces = parseInt(repaintPiecesText, 10) || 0;
   const repaintWheels = parseInt(repaintWheelsText, 10) || 0;
@@ -148,7 +150,7 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
           />
           {hasTires && (
             <View style={styles.subField}>
-              <Text style={styles.subLabel}>Quantos pneus novos? (máx. {maxTires})</Text>
+              <Text style={styles.subLabel}>Quantos pneus novos?</Text>
               {kind === 'motorcycles' ? (
                 <OptionGroup
                   options={MOTO_TIRE_OPTIONS}
@@ -156,20 +158,15 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
                   onChange={setMotoTireValue}
                 />
               ) : (
-                <TextInput
-                  value={carTireText}
-                  onChangeText={setCarTireText}
-                  placeholder={`Digite 1 a ${maxTires}`}
-                  placeholderTextColor={colors.textTertiary}
-                  keyboardType="number-pad"
-                  style={styles.input}
+                <OptionGroup
+                  options={CAR_TIRE_OPTIONS}
+                  value={carTireValue}
+                  onChange={setCarTireValue}
                 />
               )}
-              {hasTires && newTireCount > 0 && (
-                <Text style={styles.fieldNote}>
-                  {newTireCount} de {maxTires} pneus novos considerados.
-                </Text>
-              )}
+              <Text style={styles.fieldNote}>
+                {newTireCount} de {maxTires} pneus novos considerados.
+              </Text>
             </View>
           )}
         </Card>

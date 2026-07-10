@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { fetchBrands, fetchModels, fetchVehicleInfo, fetchYears, FipeApiError } from '../api/fipeApi';
-import { fetchVehicleByPlateOrRenavam, FipeVersionMatch, PlateApiError, PlateLookupResult } from '../api/plateApi';
+import { fetchVehicleByPlate, FipeVersionMatch, PlateApiError, PlateLookupResult } from '../api/plateApi';
 import { filterBrazilianMarketBrands } from '../domain/brBrands';
-import { formatPlateOrRenavamHint, parsePlateOrRenavam } from '../domain/plateValidation';
+import { formatPlateHint, parsePlate } from '../domain/plateValidation';
 import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
 import { OptionGroup } from '../components/OptionGroup';
@@ -21,7 +21,7 @@ type SearchMode = 'manual' | 'plate';
 
 const MODE_OPTIONS: { value: SearchMode; label: string }[] = [
   { value: 'manual', label: 'Marca, modelo e ano' },
-  { value: 'plate', label: 'Placa ou Renavam' },
+  { value: 'plate', label: 'Placa' },
 ];
 
 const KIND_OPTIONS: { value: VehicleKind; label: string }[] = [
@@ -57,7 +57,7 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
   const [loadingPrice, setLoadingPrice] = useState(false);
   const [manualError, setManualError] = useState<string | null>(null);
 
-  // ---- Busca por placa / Renavam ----
+  // ---- Busca por placa ----
   const [plateText, setPlateText] = useState('');
   const [plateLoading, setPlateLoading] = useState(false);
   const [plateError, setPlateError] = useState<string | null>(null);
@@ -140,11 +140,11 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
       .finally(() => setLoadingPrice(false));
   }, [year, model, brand, kind]);
 
-  const parsedPlate = useMemo(() => parsePlateOrRenavam(plateText), [plateText]);
+  const parsedPlate = useMemo(() => parsePlate(plateText), [plateText]);
 
   function handlePlateSearch() {
     if (!parsedPlate) {
-      setPlateError('Digite uma placa válida (ex: ABC1234 ou ABC1D23) ou um Renavam (9 a 11 dígitos).');
+      setPlateError('Digite uma placa válida (ex: ABC1234 ou ABC1D23).');
       setPlateResult(null);
       return;
     }
@@ -152,7 +152,7 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
     setPlateError(null);
     setPlateResult(null);
     setPlateLoading(true);
-    fetchVehicleByPlateOrRenavam(parsedPlate)
+    fetchVehicleByPlate(parsedPlate)
       .then(setPlateResult)
       .catch((e) => setPlateError(e instanceof PlateApiError ? e.message : 'Erro ao consultar o veículo.'))
       .finally(() => setPlateLoading(false));
@@ -243,20 +243,20 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
       ) : (
         <>
           <Card style={styles.card}>
-            <SectionLabel>Placa ou Renavam</SectionLabel>
+            <SectionLabel>Placa do veículo</SectionLabel>
             <TextInput
               value={plateText}
               onChangeText={(t) => {
                 setPlateText(t);
                 setPlateError(null);
               }}
-              placeholder="Ex: ABC1234, ABC1D23 ou Renavam"
+              placeholder="Ex: ABC1234 ou ABC1D23"
               placeholderTextColor={colors.textTertiary}
               autoCapitalize="characters"
               style={styles.input}
             />
             {parsedPlate ? (
-              <Text style={styles.fieldNote}>{formatPlateOrRenavamHint(parsedPlate.type)} reconhecido.</Text>
+              <Text style={styles.fieldNote}>{formatPlateHint(parsedPlate.type)} reconhecido.</Text>
             ) : null}
             <Button
               label="Buscar veículo"
