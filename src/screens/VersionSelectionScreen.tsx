@@ -4,7 +4,7 @@ import { FipeVersionMatch } from '../api/plateApi';
 import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
 import { VehicleKind } from '../domain/types';
-import { colors, radius, spacing, type } from '../theme/tokens';
+import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 
 interface VersionSelectionScreenProps {
   kind: VehicleKind;
@@ -126,12 +126,14 @@ const styles = StyleSheet.create({
     fontWeight: type.h2.fontWeight,
     color: colors.caution,
     marginBottom: spacing.sm,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   alertBody: {
     fontSize: type.body.fontSize,
     lineHeight: type.body.lineHeight,
     color: colors.textPrimary,
     marginTop: spacing.xs,
+    fontFamily: fontFamily.inter,
   },
   alertBodyBold: {
     fontSize: type.body.fontSize,
@@ -139,6 +141,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontWeight: '700',
     marginTop: spacing.sm,
+    fontFamily: fontFamily.inter,
   },
   versionCard: {
     backgroundColor: colors.surface,
@@ -189,6 +192,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.textPrimary,
     flex: 1,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   versionModelSelected: {
     color: colors.ink,
@@ -203,16 +207,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     color: colors.info,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   versionMeta: {
     fontSize: type.caption.fontSize,
     color: colors.textTertiary,
     marginBottom: 4,
+    fontFamily: fontFamily.inter,
   },
   versionPrice: {
     fontSize: type.h2.fontSize,
     fontWeight: type.h2.fontWeight,
     color: colors.textSecondary,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   versionPriceSelected: {
     color: colors.ink,
@@ -221,6 +228,7 @@ const styles = StyleSheet.create({
     fontSize: type.caption.fontSize,
     color: colors.textTertiary,
     marginTop: 2,
+    fontFamily: fontFamily.inter,
   },
   selectedSummary: {
     marginTop: spacing.md,
@@ -231,17 +239,20 @@ const styles = StyleSheet.create({
     fontWeight: type.h2.fontWeight,
     color: colors.textPrimary,
     marginBottom: 4,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   selectedPrice: {
     fontSize: type.display.fontSize,
     fontWeight: type.display.fontWeight,
     color: colors.ink,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   manualNote: {
     fontSize: type.caption.fontSize,
     color: colors.caution,
     marginTop: spacing.sm,
     fontWeight: '600',
+    fontFamily: fontFamily.inter,
   },
   confirmButton: {
     marginTop: spacing.sm,

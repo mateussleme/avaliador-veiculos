@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
-import { colors, radius, spacing, type } from '../theme/tokens';
+import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 
 const MARKER_SIZE = 16;
 
@@ -88,5 +88,6 @@ const styles = StyleSheet.create({
   captionText: {
     fontSize: type.caption.fontSize,
     color: colors.textTertiary,
+    fontFamily: fontFamily.inter,
   },
 });

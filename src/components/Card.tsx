@@ -1,7 +1,6 @@
 import React, { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, radius, spacing, type } from '../theme/tokens';
-
+import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 export function Card({ children, style }: { children: ReactNode; style?: object }) {
   return <View style={[styles.card, style]}>{children}</View>;
 }
@@ -25,5 +24,6 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     textTransform: 'uppercase',
     marginBottom: spacing.sm,
+    fontFamily: fontFamily.inter,
   },
 });

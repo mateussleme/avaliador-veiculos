@@ -4,6 +4,20 @@
 // de inspeção automotiva: verde, âmbar e vermelho têm o mesmo significado
 // que têm no painel de um carro (bom / atenção / problema), e o resto da
 // paleta é neutro para não competir com esses sinais.
+//
+// Tipografia dual:
+// - Space Grotesk para títulos, destaques e valores de preço (display)
+// - Inter para corpo de texto, labels e dados
+
+// Font family names — devem coincidir com os nomes internos das fontes
+// registradas no expo-font. A família "Inter" cobre Regular, Medium, SemiBold, Bold, ExtraBold.
+// A família "Inter Display" cobre as variantes Display.
+// A família "SpaceGrotesk" cobre Light, Regular, Medium, Bold.
+export const fontFamily = {
+  spaceGrotesk: 'SpaceGrotesk',
+  inter: 'Inter',
+  interDisplay: 'Inter Display',
+} as const;
 
 export const colors = {
   // Base
@@ -49,12 +63,43 @@ export const radius = {
   lg: 16,
   pill: 999,
 } as const;
-
+// Tipografia com fontFamily integrada.
+// Space Grotesk para display/títulos (destaques e valores).
+// Inter para corpo de texto (labels, dados, descrição).
+// Inter Display para o nome do app e textos de alto impacto visual.
 export const type = {
-  display: { fontSize: 30, fontWeight: '700' as const, letterSpacing: -0.3 },
-  h1: { fontSize: 22, fontWeight: '700' as const, letterSpacing: -0.2 },
-  h2: { fontSize: 17, fontWeight: '600' as const },
-  body: { fontSize: 15, fontWeight: '400' as const, lineHeight: 21 },
-  label: { fontSize: 12, fontWeight: '600' as const, letterSpacing: 0.6 },
-  caption: { fontSize: 12, fontWeight: '400' as const },
+  display: {
+    fontSize: 30,
+    fontWeight: '700' as const,
+    letterSpacing: -0.3,
+    fontFamily: fontFamily.spaceGrotesk,
+  },
+  h1: {
+    fontSize: 22,
+    fontWeight: '700' as const,
+    letterSpacing: -0.2,
+    fontFamily: fontFamily.spaceGrotesk,
+  },
+  h2: {
+    fontSize: 17,
+    fontWeight: '600' as const,
+    fontFamily: fontFamily.spaceGrotesk,
+  },
+  body: {
+    fontSize: 15,
+    fontWeight: '400' as const,
+    lineHeight: 21,
+    fontFamily: fontFamily.inter,
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+    letterSpacing: 0.6,
+    fontFamily: fontFamily.inter,
+  },
+  caption: {
+    fontSize: 12,
+    fontWeight: '400' as const,
+    fontFamily: fontFamily.inter,
+  },
 };

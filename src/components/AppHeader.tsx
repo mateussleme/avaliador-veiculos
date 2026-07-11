@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, type } from '../theme/tokens';
+import { colors, fontFamily, spacing, type } from '../theme/tokens';
 
 interface AppHeaderProps {
   title: string;
@@ -62,6 +62,7 @@ const styles = StyleSheet.create({
   backArrow: {
     color: colors.textOnInk,
     fontSize: 26,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   titleWrap: {
     flex: 1,
@@ -71,12 +72,14 @@ const styles = StyleSheet.create({
     color: colors.textOnInk,
     fontSize: type.h2.fontSize,
     fontWeight: type.h2.fontWeight,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   subtitle: {
     color: colors.textOnInk,
     opacity: 0.7,
     fontSize: type.caption.fontSize,
     marginTop: 2,
+    fontFamily: fontFamily.inter,
   },
   privacyLink: {
     color: colors.textOnInk,
@@ -84,5 +87,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     textAlign: 'right',
+    fontFamily: fontFamily.inter,
   },
 });

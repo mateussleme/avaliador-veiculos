@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
 import { EvaluationWithOutcome } from '../types/database';
-import { colors, spacing, type } from '../theme/tokens';
+import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 
 interface EvaluationDetailScreenProps {
   evaluation: EvaluationWithOutcome;
@@ -89,16 +89,16 @@ export function EvaluationDetailScreen({ evaluation, onRegisterOutcome }: Evalua
 
 const styles = StyleSheet.create({
   scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
-  vehicleName: { fontSize: type.h1.fontSize, fontWeight: type.h1.fontWeight, color: colors.textPrimary },
-  vehicleMeta: { fontSize: type.caption.fontSize, color: colors.textSecondary, marginTop: 2 },
-  dateText: { fontSize: type.caption.fontSize, color: colors.textTertiary, marginBottom: spacing.lg },
+  vehicleName: { fontSize: type.h1.fontSize, fontWeight: type.h1.fontWeight, color: colors.textPrimary, fontFamily: fontFamily.spaceGrotesk },
+  vehicleMeta: { fontSize: type.caption.fontSize, color: colors.textSecondary, marginTop: 2, fontFamily: fontFamily.inter },
+  dateText: { fontSize: type.caption.fontSize, color: colors.textTertiary, marginBottom: spacing.lg, fontFamily: fontFamily.inter },
   heroCard: { marginBottom: spacing.md },
-  estimatedValue: { fontSize: 30, fontWeight: '700', color: colors.ink, marginTop: 2, marginBottom: spacing.md },
+  estimatedValue: { fontSize: 30, fontWeight: '700', color: colors.ink, marginTop: 2, marginBottom: spacing.md, fontFamily: fontFamily.spaceGrotesk },
   compareRow: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border },
   compareRight: { alignItems: 'flex-end' },
-  compareLabel: { fontSize: type.caption.fontSize, color: colors.textTertiary, marginBottom: 2 },
-  compareValue: { fontSize: type.h2.fontSize, fontWeight: type.h2.fontWeight, color: colors.textPrimary },
+  compareLabel: { fontSize: type.caption.fontSize, color: colors.textTertiary, marginBottom: 2, fontFamily: fontFamily.inter },
+  compareValue: { fontSize: type.h2.fontSize, fontWeight: type.h2.fontWeight, color: colors.textPrimary, fontFamily: fontFamily.spaceGrotesk },
   card: { marginBottom: spacing.md },
-  detailLine: { fontSize: type.body.fontSize, color: colors.textPrimary, marginBottom: spacing.xs },
+  detailLine: { fontSize: type.body.fontSize, color: colors.textPrimary, marginBottom: spacing.xs, fontFamily: fontFamily.inter },
   outcomeButton: { marginTop: spacing.sm },
 });

@@ -4,7 +4,7 @@ import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
 import { GaugeBar } from '../components/GaugeBar';
 import { ADJUSTMENT_RANGE } from '../domain/evaluationEngine';
-import { colors, radius, spacing, type } from '../theme/tokens';
+import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 import { AdjustmentSeverity, EvaluationInput, EvaluationResult, FipeVehicleInfo, VehicleKind } from '../domain/types';
 import { saveEvaluation } from '../services/evaluationService';
 
@@ -212,12 +212,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.ink,
     marginTop: 2,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   positionLabel: {
     fontSize: type.body.fontSize,
     color: colors.textSecondary,
     marginTop: 2,
     marginBottom: spacing.sm,
+    fontFamily: fontFamily.inter,
   },
   priceRowThree: {
     flexDirection: 'row',
@@ -247,11 +249,13 @@ const styles = StyleSheet.create({
     color: colors.danger,
     flex: 1,
     paddingRight: spacing.sm,
+    fontFamily: fontFamily.inter,
   },
   prepCostValue: {
     fontSize: type.h2.fontSize,
     fontWeight: '700',
     color: colors.danger,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   repasseCard: {
     flexDirection: 'row',
@@ -266,23 +270,27 @@ const styles = StyleSheet.create({
     fontSize: type.body.fontSize,
     fontWeight: '700',
     color: colors.info,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   repasseNote: {
     fontSize: type.caption.fontSize,
     color: colors.info,
     opacity: 0.8,
     marginTop: 2,
+    fontFamily: fontFamily.inter,
   },
   repasseValue: {
     fontSize: type.h1.fontSize,
     fontWeight: '700',
     color: colors.info,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   discountSourceNote: {
     fontSize: type.caption.fontSize,
     color: colors.textTertiary,
     marginTop: spacing.sm,
     lineHeight: 16,
+    fontFamily: fontFamily.inter,
   },
   // legados mantidos
   compareRow: {
@@ -300,17 +308,20 @@ const styles = StyleSheet.create({
     fontSize: type.caption.fontSize,
     color: colors.textTertiary,
     marginBottom: 2,
+    fontFamily: fontFamily.inter,
   },
   compareValue: {
     fontSize: type.h2.fontSize,
     fontWeight: type.h2.fontWeight,
     color: colors.textPrimary,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   breakdownTitle: {
     fontSize: type.h2.fontSize,
     fontWeight: type.h2.fontWeight,
     color: colors.textPrimary,
     marginBottom: spacing.sm,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   lineCard: {
     marginBottom: spacing.sm,
@@ -327,6 +338,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     flex: 1,
     paddingRight: spacing.sm,
+    fontFamily: fontFamily.inter,
   },
   percentBadge: {
     paddingHorizontal: spacing.sm,
@@ -336,11 +348,13 @@ const styles = StyleSheet.create({
   percentText: {
     fontSize: 13,
     fontWeight: '700',
+    fontFamily: fontFamily.spaceGrotesk,
   },
   lineDetail: {
     fontSize: type.caption.fontSize,
     lineHeight: 17,
     color: colors.textSecondary,
+    fontFamily: fontFamily.inter,
   },
   disclaimerCard: {
     backgroundColor: colors.surfaceAlt,
@@ -351,6 +365,7 @@ const styles = StyleSheet.create({
     fontSize: type.caption.fontSize,
     lineHeight: 17,
     color: colors.textSecondary,
+    fontFamily: fontFamily.inter,
   },
   restartButton: {
     marginBottom: spacing.lg,
@@ -368,5 +383,6 @@ const styles = StyleSheet.create({
     color: colors.good,
     fontWeight: '700',
     fontSize: type.body.fontSize,
+    fontFamily: fontFamily.inter,
   },
 });

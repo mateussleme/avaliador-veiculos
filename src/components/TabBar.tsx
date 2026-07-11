@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, type } from '../theme/tokens';
+import { colors, fontFamily, spacing, type } from '../theme/tokens';
 
 export type TabKey = 'evaluate' | 'history';
 
@@ -60,9 +60,11 @@ const styles = StyleSheet.create({
   label: {
     fontSize: type.caption.fontSize,
     color: colors.textTertiary,
+    fontFamily: fontFamily.inter,
   },
   labelActive: {
     color: colors.ink,
     fontWeight: '600',
+    fontFamily: fontFamily.inter,
   },
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, radius, spacing, type } from '../theme/tokens';
+import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 
 export interface ChipOption<T extends string> {
   value: T;
@@ -84,6 +84,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: colors.textSecondary,
+    fontFamily: fontFamily.inter,
   },
   chipLabelSelected: {
     color: colors.textOnInk,
@@ -99,6 +100,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     flex: 1,
     paddingRight: spacing.md,
+    fontFamily: fontFamily.inter,
   },
   toggleChips: {
     flexDirection: 'row',

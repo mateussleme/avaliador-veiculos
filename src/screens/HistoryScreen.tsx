@@ -11,7 +11,7 @@ import {
 import { fetchEvaluations } from '../services/evaluationService';
 import { supabase } from '../lib/supabase';
 import { EvaluationWithOutcome } from '../types/database';
-import { colors, radius, spacing, type } from '../theme/tokens';
+import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 
 interface HistoryScreenProps {
   onSelectEvaluation: (evaluation: EvaluationWithOutcome) => void;
@@ -138,25 +138,25 @@ export function HistoryScreen({ onSelectEvaluation, refreshTrigger }: HistoryScr
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.background },
-  loadingText: { marginTop: spacing.md, color: colors.textSecondary, fontSize: type.body.fontSize },
+   loadingText: { marginTop: spacing.md, color: colors.textSecondary, fontSize: type.body.fontSize, fontFamily: fontFamily.inter },
   errorText: { color: colors.danger, textAlign: 'center', marginBottom: spacing.md },
   retryButton: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md, backgroundColor: colors.ink, borderRadius: radius.md },
-  retryText: { color: colors.textOnInk, fontWeight: '600' },
-  emptyTitle: { fontSize: type.h2.fontSize, fontWeight: type.h2.fontWeight, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.sm },
-  emptyBody: { fontSize: type.body.fontSize, color: colors.textSecondary, textAlign: 'center', lineHeight: 21 },
+  retryText: { color: colors.textOnInk, fontWeight: '600', fontFamily: fontFamily.spaceGrotesk },
+  emptyTitle: { fontSize: type.h2.fontSize, fontWeight: type.h2.fontWeight, color: colors.textPrimary, textAlign: 'center', marginBottom: spacing.sm, fontFamily: fontFamily.spaceGrotesk },
+  emptyBody: { fontSize: type.body.fontSize, color: colors.textSecondary, textAlign: 'center', lineHeight: 21, fontFamily: fontFamily.inter },
   list: { padding: spacing.lg, paddingBottom: spacing.xxl },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.lg, marginBottom: spacing.sm },
   cardPressed: { opacity: 0.85 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   cardTitleWrap: { flex: 1, paddingRight: spacing.sm },
-  cardVehicle: { fontSize: type.h2.fontSize, fontWeight: type.h2.fontWeight, color: colors.textPrimary },
-  cardMeta: { fontSize: type.caption.fontSize, color: colors.textTertiary, marginTop: 2 },
+  cardVehicle: { fontSize: type.h2.fontSize, fontWeight: type.h2.fontWeight, color: colors.textPrimary, fontFamily: fontFamily.spaceGrotesk },
+  cardMeta: { fontSize: type.caption.fontSize, color: colors.textTertiary, marginTop: 2, fontFamily: fontFamily.inter },
   cardPriceWrap: { alignItems: 'flex-end' },
-  cardPrice: { fontSize: type.h2.fontSize, fontWeight: '700', color: colors.ink },
-  cardDate: { fontSize: type.caption.fontSize, color: colors.textTertiary, marginTop: 2 },
+  cardPrice: { fontSize: type.h2.fontSize, fontWeight: '700', color: colors.ink, fontFamily: fontFamily.spaceGrotesk },
+  cardDate: { fontSize: type.caption.fontSize, color: colors.textTertiary, marginTop: 2, fontFamily: fontFamily.inter },
   cardFooter: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
   badge: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.pill },
-  badgeText: { fontSize: 12, fontWeight: '600' },
+  badgeText: { fontSize: 12, fontWeight: '600', fontFamily: fontFamily.inter },
   badgePending: { backgroundColor: colors.surfaceAlt },
   badgePendingText: { color: colors.textSecondary },
   badgeDeclined: { backgroundColor: colors.dangerBg },
@@ -165,6 +165,6 @@ const styles = StyleSheet.create({
   badgePurchasedText: { color: colors.caution },
   badgeSold: { backgroundColor: colors.goodBg },
   badgeSoldText: { color: colors.good },
-  cardPurchasePrice: { fontSize: type.caption.fontSize, color: colors.caution, fontWeight: '600' },
-  cardSalePrice: { fontSize: type.caption.fontSize, color: colors.good, fontWeight: '600' },
+  cardPurchasePrice: { fontSize: type.caption.fontSize, color: colors.caution, fontWeight: '600', fontFamily: fontFamily.spaceGrotesk },
+  cardSalePrice: { fontSize: type.caption.fontSize, color: colors.good, fontWeight: '600', fontFamily: fontFamily.spaceGrotesk },
 });

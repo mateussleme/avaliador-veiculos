@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Card, SectionLabel } from '../components/Card';
 import { Button } from '../components/Button';
-import { colors, spacing, type } from '../theme/tokens';
+import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 
 interface PrivacyScreenProps {
   visible: boolean;
@@ -86,17 +86,19 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     paddingTop: spacing.xxl,
   },
-  heading: {
+   heading: {
     fontSize: type.h1.fontSize,
     fontWeight: type.h1.fontWeight,
     color: colors.textPrimary,
     marginBottom: spacing.sm,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   intro: {
     fontSize: type.body.fontSize,
     lineHeight: type.body.lineHeight,
     color: colors.textSecondary,
     marginBottom: spacing.xl,
+    fontFamily: fontFamily.inter,
   },
   card: {
     marginBottom: spacing.md,
@@ -105,6 +107,7 @@ const styles = StyleSheet.create({
     fontSize: type.body.fontSize,
     lineHeight: type.body.lineHeight,
     color: colors.textPrimary,
+    fontFamily: fontFamily.inter,
   },
   footer: {
     padding: spacing.lg,

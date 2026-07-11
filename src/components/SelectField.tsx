@@ -8,7 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { colors, radius, spacing, type } from '../theme/tokens';
+import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 
 export interface SelectOption {
   code: string;
@@ -117,6 +117,7 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     textTransform: 'uppercase',
     marginBottom: spacing.sm,
+    fontFamily: fontFamily.inter,
   },
   field: {
     flexDirection: 'row',
@@ -136,14 +137,17 @@ const styles = StyleSheet.create({
     fontSize: type.body.fontSize,
     color: colors.textPrimary,
     flex: 1,
+    fontFamily: fontFamily.inter,
   },
   fieldPlaceholder: {
     color: colors.textTertiary,
+    fontFamily: fontFamily.inter,
   },
   chevron: {
     color: colors.textTertiary,
     fontSize: 18,
     marginLeft: spacing.sm,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   modalRoot: {
     flex: 1,
@@ -161,11 +165,13 @@ const styles = StyleSheet.create({
     fontSize: type.h1.fontSize,
     fontWeight: type.h1.fontWeight,
     color: colors.textPrimary,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   modalClose: {
     fontSize: 15,
     fontWeight: '600',
     color: colors.ink,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   search: {
     marginHorizontal: spacing.lg,
@@ -178,6 +184,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     fontSize: type.body.fontSize,
     color: colors.textPrimary,
+    fontFamily: fontFamily.inter,
   },
   option: {
     paddingHorizontal: spacing.lg,
@@ -186,6 +193,7 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: type.body.fontSize,
     color: colors.textPrimary,
+    fontFamily: fontFamily.inter,
   },
   separator: {
     height: 1,
@@ -197,5 +205,6 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     marginTop: spacing.xxl,
     fontSize: type.body.fontSize,
+    fontFamily: fontFamily.inter,
   },
 });

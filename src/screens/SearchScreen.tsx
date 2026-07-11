@@ -9,7 +9,7 @@ import { Card, SectionLabel } from '../components/Card';
 import { OptionGroup } from '../components/OptionGroup';
 import { SelectField, SelectOption } from '../components/SelectField';
 import { useBottomPadding } from '../hooks/useBottomPadding';
-import { colors, spacing, type } from '../theme/tokens';
+import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 import { FipeVehicleInfo, VehicleKind } from '../domain/types';
 
 interface SearchScreenProps {
@@ -319,6 +319,7 @@ const styles = StyleSheet.create({
     lineHeight: type.body.lineHeight,
     color: colors.textSecondary,
     marginBottom: spacing.xl,
+    fontFamily: fontFamily.inter,
   },
   kindWrap: {
     marginBottom: spacing.lg,
@@ -330,12 +331,14 @@ const styles = StyleSheet.create({
     fontSize: type.h2.fontSize,
     color: colors.textPrimary,
     paddingVertical: spacing.sm,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   fieldNote: {
     fontSize: type.caption.fontSize,
     color: colors.textTertiary,
     marginTop: spacing.xs,
     lineHeight: 16,
+    fontFamily: fontFamily.inter,
   },
   searchButton: {
     marginTop: spacing.md,
@@ -349,6 +352,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: colors.ink,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   errorCard: {
     backgroundColor: colors.dangerBg,
@@ -358,6 +362,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: colors.danger,
     fontSize: type.body.fontSize,
+    fontFamily: fontFamily.inter,
   },
   priceCard: {
     marginBottom: spacing.xl,
@@ -365,22 +370,26 @@ const styles = StyleSheet.create({
   loadingText: {
     color: colors.textSecondary,
     fontSize: type.body.fontSize,
+    fontFamily: fontFamily.inter,
   },
   vehicleName: {
     fontSize: type.h2.fontSize,
     fontWeight: type.h2.fontWeight,
     color: colors.textPrimary,
     marginBottom: 2,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   vehicleMeta: {
     fontSize: type.caption.fontSize,
     color: colors.textSecondary,
     marginBottom: spacing.sm,
+    fontFamily: fontFamily.inter,
   },
   priceValue: {
     fontSize: type.display.fontSize,
     fontWeight: type.display.fontWeight,
     color: colors.ink,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   continueButton: {
     marginTop: spacing.sm,

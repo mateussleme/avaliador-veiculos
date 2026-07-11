@@ -20,7 +20,7 @@ const AppleAuthentication = Platform.OS === 'ios'
   ? require('expo-apple-authentication')
   : null;
 import { supabase } from '../lib/supabase';
-import { colors, radius, spacing, type } from '../theme/tokens';
+import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -245,25 +245,25 @@ const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.background },
   scroll: { flexGrow: 1, padding: spacing.lg, paddingTop: spacing.xxl },
   header: { alignItems: 'center', paddingVertical: spacing.xxl },
-  appName: { fontSize: 40, fontWeight: '800', color: colors.ink, letterSpacing: -1 },
-  appTagline: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.sm, lineHeight: 20 },
+  appName: { fontSize: 40, fontWeight: '800', color: colors.ink, letterSpacing: -1, fontFamily: fontFamily.spaceGrotesk },
+  appTagline: { fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.sm, lineHeight: 20, fontFamily: fontFamily.inter },
   form: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.xl, marginBottom: spacing.lg },
-  formTitle: { fontSize: type.h1.fontSize, fontWeight: type.h1.fontWeight, color: colors.textPrimary, marginBottom: spacing.lg },
+  formTitle: { fontSize: type.h1.fontSize, fontWeight: type.h1.fontWeight, color: colors.textPrimary, marginBottom: spacing.lg, fontFamily: fontFamily.spaceGrotesk },
   field: { marginBottom: spacing.md },
-  fieldLabel: { fontSize: type.label.fontSize, fontWeight: type.label.fontWeight, letterSpacing: type.label.letterSpacing, color: colors.textTertiary, textTransform: 'uppercase', marginBottom: spacing.xs },
-  input: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, fontSize: type.body.fontSize, color: colors.textPrimary },
+  fieldLabel: { fontSize: type.label.fontSize, fontWeight: type.label.fontWeight, letterSpacing: type.label.letterSpacing, color: colors.textTertiary, textTransform: 'uppercase', marginBottom: spacing.xs, fontFamily: fontFamily.inter },
+  input: { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, fontSize: type.body.fontSize, color: colors.textPrimary, fontFamily: fontFamily.inter },
   primaryButton: { backgroundColor: colors.ink, borderRadius: radius.md, paddingVertical: spacing.md + 2, alignItems: 'center', marginTop: spacing.sm, minHeight: 50, justifyContent: 'center' },
-  primaryButtonText: { color: colors.textOnInk, fontSize: type.h2.fontSize, fontWeight: type.h2.fontWeight },
+  primaryButtonText: { color: colors.textOnInk, fontSize: type.h2.fontSize, fontWeight: type.h2.fontWeight, fontFamily: fontFamily.spaceGrotesk },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.85 },
   switchMode: { alignItems: 'center', paddingVertical: spacing.md },
-  switchModeText: { color: colors.ink, fontSize: type.body.fontSize, fontWeight: '600' },
+  switchModeText: { color: colors.ink, fontSize: type.body.fontSize, fontWeight: '600', fontFamily: fontFamily.inter },
   divider: { flexDirection: 'row', alignItems: 'center', marginVertical: spacing.lg, gap: spacing.sm },
   dividerLine: { flex: 1, height: 1, backgroundColor: colors.border },
-  dividerText: { fontSize: type.caption.fontSize, color: colors.textTertiary },
+  dividerText: { fontSize: type.caption.fontSize, color: colors.textTertiary, fontFamily: fontFamily.inter },
   socialButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.borderStrong, borderRadius: radius.md, paddingVertical: spacing.md, marginBottom: spacing.sm, minHeight: 50, gap: spacing.sm },
   socialIcon: { fontSize: 18, fontWeight: '800', color: '#4285F4' },
-  socialButtonText: { fontSize: type.body.fontSize, fontWeight: '600', color: colors.textPrimary },
+  socialButtonText: { fontSize: type.body.fontSize, fontWeight: '600', color: colors.textPrimary, fontFamily: fontFamily.inter },
   appleButton: { width: '100%', height: 50, marginTop: spacing.sm },
-  footer: { fontSize: 12, color: colors.textTertiary, textAlign: 'center', lineHeight: 17, paddingBottom: spacing.xl },
+  footer: { fontSize: 12, color: colors.textTertiary, textAlign: 'center', lineHeight: 17, paddingBottom: spacing.xl, fontFamily: fontFamily.inter },
 });

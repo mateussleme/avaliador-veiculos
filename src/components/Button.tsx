@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
-import { colors, radius, spacing, type } from '../theme/tokens';
+import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 
 interface ButtonProps {
   label: string;
@@ -82,6 +82,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: type.h2.fontSize,
     fontWeight: type.h2.fontWeight,
+    fontFamily: fontFamily.spaceGrotesk,
   },
   labelPrimary: {
     color: colors.textOnInk,

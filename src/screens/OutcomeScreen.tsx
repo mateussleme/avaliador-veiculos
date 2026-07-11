@@ -15,7 +15,8 @@ import { Card, SectionLabel } from '../components/Card';
 import { OptionGroup } from '../components/OptionGroup';
 import { saveOutcome } from '../services/evaluationService';
 import { EvaluationWithOutcome } from '../types/database';
-import { colors, radius, spacing, type } from '../theme/tokens';
+import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
+
 
 interface OutcomeScreenProps {
   evaluation: EvaluationWithOutcome;
@@ -180,20 +181,20 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
   summaryCard: { marginBottom: spacing.md },
-  vehicleName: { fontSize: type.h2.fontSize, fontWeight: type.h2.fontWeight, color: colors.textPrimary },
-  vehicleMeta: { fontSize: type.caption.fontSize, color: colors.textSecondary, marginTop: 2 },
-  intro: { fontSize: type.body.fontSize, lineHeight: type.body.lineHeight, color: colors.textSecondary, marginBottom: spacing.lg },
+  vehicleName: { fontSize: type.h2.fontSize, fontWeight: type.h2.fontWeight, color: colors.textPrimary, fontFamily: fontFamily.spaceGrotesk },
+  vehicleMeta: { fontSize: type.caption.fontSize, color: colors.textSecondary, marginTop: 2, fontFamily: fontFamily.inter },
+  intro: { fontSize: type.body.fontSize, lineHeight: type.body.lineHeight, color: colors.textSecondary, marginBottom: spacing.lg, fontFamily: fontFamily.inter },
   card: { marginBottom: spacing.md },
-  input: { fontSize: type.h2.fontSize, color: colors.textPrimary, paddingVertical: spacing.sm },
-  textArea: { fontSize: type.body.fontSize, minHeight: 70, textAlignVertical: 'top' },
+  input: { fontSize: type.h2.fontSize, color: colors.textPrimary, paddingVertical: spacing.sm, fontFamily: fontFamily.spaceGrotesk },
+  textArea: { fontSize: type.body.fontSize, minHeight: 70, textAlignVertical: 'top', fontFamily: fontFamily.inter },
   toggleRow: { flexDirection: 'row', gap: spacing.sm },
   toggleChip: { flex: 1, paddingVertical: spacing.sm + 2, borderRadius: radius.pill, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surfaceAlt, alignItems: 'center' },
   toggleChipSelected: { backgroundColor: colors.ink, borderColor: colors.ink },
-  toggleChipText: { fontSize: 14, fontWeight: '500', color: colors.textSecondary },
-  toggleChipTextSelected: { color: colors.textOnInk },
-  marginNote: { fontSize: type.caption.fontSize, color: colors.good, fontWeight: '600', marginTop: spacing.xs },
+  toggleChipText: { fontSize: 14, fontWeight: '500', color: colors.textSecondary, fontFamily: fontFamily.inter },
+  marginNote: { fontSize: type.caption.fontSize, color: colors.good, fontWeight: '600', marginTop: spacing.xs, fontFamily: fontFamily.spaceGrotesk },
   saveButton: { backgroundColor: colors.ink, borderRadius: radius.md, paddingVertical: spacing.md + 2, alignItems: 'center', marginTop: spacing.sm, minHeight: 50, justifyContent: 'center' },
-  saveButtonText: { color: colors.textOnInk, fontSize: type.h2.fontSize, fontWeight: type.h2.fontWeight },
+  saveButton: { backgroundColor: colors.ink, borderRadius: radius.md, paddingVertical: spacing.md + 2, alignItems: 'center', marginTop: spacing.sm, minHeight: 50, justifyContent: 'center' },
+  saveButtonText: { color: colors.textOnInk, fontSize: type.h2.fontSize, fontWeight: type.h2.fontWeight, fontFamily: fontFamily.spaceGrotesk },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.85 },
 });

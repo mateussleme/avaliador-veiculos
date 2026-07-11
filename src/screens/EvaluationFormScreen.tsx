@@ -18,7 +18,7 @@ import {
 import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
 import { OptionGroup, ToggleRow } from '../components/OptionGroup';
-import { colors, spacing, type } from '../theme/tokens';
+import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 
 interface EvaluationFormScreenProps {
   kind: VehicleKind;
@@ -245,15 +245,17 @@ const styles = StyleSheet.create({
     lineHeight: type.body.lineHeight,
     color: colors.textSecondary,
     marginBottom: spacing.lg,
+    fontFamily: fontFamily.inter,
   },
   card: { marginBottom: spacing.md },
   input: {
     fontSize: type.h2.fontSize,
     color: colors.textPrimary,
     paddingVertical: spacing.sm,
+    fontFamily: fontFamily.spaceGrotesk,
   },
-  fieldError: { color: colors.danger, fontSize: type.caption.fontSize, marginTop: spacing.xs },
-  fieldNote: { fontSize: type.caption.fontSize, color: colors.textTertiary, marginTop: spacing.xs, lineHeight: 16 },
+  fieldError: { color: colors.danger, fontSize: type.caption.fontSize, marginTop: spacing.xs, fontFamily: fontFamily.inter },
+  fieldNote: { fontSize: type.caption.fontSize, color: colors.textTertiary, marginTop: spacing.xs, lineHeight: 16, fontFamily: fontFamily.inter },
   fieldNotePositive: { fontWeight: '700', color: colors.good },
   fieldNoteNegative: { fontWeight: '700', color: colors.danger },
   subField: {
@@ -267,6 +269,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.textSecondary,
     marginBottom: spacing.xs,
+    fontFamily: fontFamily.inter,
   },
   costPreview: {
     marginTop: spacing.sm,
@@ -274,7 +277,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dangerBg,
     borderRadius: 8,
   },
-  costPreviewText: { fontSize: type.caption.fontSize, color: colors.danger },
+  costPreviewText: { fontSize: type.caption.fontSize, color: colors.danger, fontFamily: fontFamily.inter },
   costPreviewValue: { fontWeight: '700' },
   submitButton: { marginTop: spacing.md },
 });
