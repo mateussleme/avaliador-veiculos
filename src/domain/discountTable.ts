@@ -66,12 +66,20 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "BMW", model: "Ix2", discount: 0.3 }, // 30%
   { brand: "BMW", model: "Ix3", discount: 0.3 }, // 30%
 
+  // BMW motos — linha "RT" (touring): R 1200 RT, R 1250 RT e variantes/trims
+  // (ex: "R 1250 RT Premium Spezial"). O match é por palavra completa "Rt",
+  // então cobre qualquer versão/trim contanto que a FIPE escreva "RT" com
+  // espaço antes (não gruda em "R1250RT" sem espaço).
+  { brand: "BMW", model: "Rt", discount: 0.25 }, // 25%
+
   // Land Rover
   { brand: "Land Rover", model: "Defender", discount: 0.22 }, // 22%
   { brand: "Land Rover", model: "Discovery", discount: 0.25 }, // 25%
   { brand: "Land Rover", model: "Discovery Sport", discount: 0.25 }, // 25%
   { brand: "Land Rover", model: "Range Rover", discount: 0.25 }, // 25%
   { brand: "Land Rover", model: "Range Rover Evoque", discount: 0.25 }, // 25%
+  { brand: "Land Rover", model: "Evoque", discount: 0.25 }, // 25%
+  { brand: "Land Rover", model: "EVO", discount: 0.25 }, // 25%
   { brand: "Land Rover", model: "Range Rover Sport", discount: 0.3 }, // 30%
   { brand: "Land Rover", model: "Range Rover Velar", discount: 0.3 }, // 30%
   { brand: "Land Rover", model: "Range Rover Vogue", discount: 0.3 }, // 30%
@@ -273,27 +281,28 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Chevrolet", model: "Tracker", discount: 0.2 }, // 20%
   { brand: "Chevrolet", model: "Trailblazer", discount: 0.25 }, // 25%
 
-  // Volksvagen
-  { brand: "Volksvagen", model: "Crossfox", discount: 0.2 }, // 20%
-  { brand: "Volksvagen", model: "Delivery Express", discount: 0.2 }, // 20%
-  { brand: "Volksvagen", model: "Fox", discount: 0.18 }, // 18%
-  { brand: "Volksvagen", model: "Gol", discount: 0.18 }, // 18%
-  { brand: "Volksvagen", model: "Golf", discount: 0.2 }, // 20%
-  { brand: "Volksvagen", model: "Id.buzz", discount: 0.25 }, // 25%
-  { brand: "Volksvagen", model: "Jetta", discount: 0.2 }, // 20%
-  { brand: "Volksvagen", model: "Nivus", discount: 0.18 }, // 18%
-  { brand: "Volksvagen", model: "Passat", discount: 0.3 }, // 30%
-  { brand: "Volksvagen", model: "Polo", discount: 0.18 }, // 18%
-  { brand: "Volksvagen", model: "Saveiro", discount: 0.18 }, // 18%
-  { brand: "Volksvagen", model: "Spacefox", discount: 0.18 }, // 18%
-  { brand: "Volksvagen", model: "T-cross", discount: 0.18 }, // 18%
-  { brand: "Volksvagen", model: "Taos", discount: 0.19 }, // 19%
-  { brand: "Volksvagen", model: "Tera", discount: 0.19 }, // 19%
-  { brand: "Volksvagen", model: "Tiguan", discount: 0.19 }, // 19%
-  { brand: "Volksvagen", model: "Touareg", discount: 0.35 }, // 35%
-  { brand: "Volksvagen", model: "Up", discount: 0.18 }, // 18%
-  { brand: "Volksvagen", model: "Virtus", discount: 0.19 }, // 19%
-  { brand: "Volksvagen", model: "Voyage", discount: 0.18 }, // 18%
+  // Volkswagen
+  { brand: "Volkswagen", model: "Amarok", discount: 0.25 }, // 25% — todas as versões/trims
+  { brand: "Volkswagen", model: "Crossfox", discount: 0.2 }, // 20%
+  { brand: "Volkswagen", model: "Delivery Express", discount: 0.2 }, // 20%
+  { brand: "Volkswagen", model: "Fox", discount: 0.18 }, // 18%
+  { brand: "Volkswagen", model: "Gol", discount: 0.18 }, // 18%
+  { brand: "Volkswagen", model: "Golf", discount: 0.2 }, // 20%
+  { brand: "Volkswagen", model: "Id.buzz", discount: 0.25 }, // 25%
+  { brand: "Volkswagen", model: "Jetta", discount: 0.2 }, // 20%
+  { brand: "Volkswagen", model: "Nivus", discount: 0.18 }, // 18%
+  { brand: "Volkswagen", model: "Passat", discount: 0.3 }, // 30%
+  { brand: "Volkswagen", model: "Polo", discount: 0.18 }, // 18%
+  { brand: "Volkswagen", model: "Saveiro", discount: 0.18 }, // 18%
+  { brand: "Volkswagen", model: "Spacefox", discount: 0.18 }, // 18%
+  { brand: "Volkswagen", model: "T-cross", discount: 0.18 }, // 18%
+  { brand: "Volkswagen", model: "Taos", discount: 0.19 }, // 19%
+  { brand: "Volkswagen", model: "Tera", discount: 0.19 }, // 19%
+  { brand: "Volkswagen", model: "Tiguan", discount: 0.19 }, // 19%
+  { brand: "Volkswagen", model: "Touareg", discount: 0.35 }, // 35%
+  { brand: "Volkswagen", model: "Up", discount: 0.18 }, // 18%
+  { brand: "Volkswagen", model: "Virtus", discount: 0.19 }, // 19%
+  { brand: "Volkswagen", model: "Voyage", discount: 0.18 }, // 18%
 
   // Mitsubish
   { brand: "Mitsubish", model: "Asx", discount: 0.2 }, // 20%
@@ -318,19 +327,19 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Porsche", model: "Panamera", discount: 0.25 }, // 25%
   { brand: "Porsche", model: "Taycan", discount: 0.3 }, // 30%
 
-  // BYB
-  { brand: "BYB", model: "Dolphin", discount: 0.2 }, // 20%
-  { brand: "BYB", model: "Dolphin Mini", discount: 0.15 }, // 15%
-  { brand: "BYB", model: "Han", discount: 0.3 }, // 30%
-  { brand: "BYB", model: "King", discount: 0.2 }, // 20%
-  { brand: "BYB", model: "Seal", discount: 0.28 }, // 28%
-  { brand: "BYB", model: "Shark", discount: 0.28 }, // 28%
-  { brand: "BYB", model: "Song Plus", discount: 0.2 }, // 20%
-  { brand: "BYB", model: "Song Plus Premium", discount: 0.2 }, // 20%
-  { brand: "BYB", model: "Song Pro", discount: 0.2 }, // 20%
-  { brand: "BYB", model: "Tan", discount: 0.3 }, // 30%
-  { brand: "BYB", model: "Yuan Plus", discount: 0.25 }, // 25%
-  { brand: "BYB", model: "Yuan Pro", discount: 0.25 }, // 25%
+  // BYD
+  { brand: "BYD", model: "Dolphin", discount: 0.2 }, // 20%
+  { brand: "BYD", model: "Dolphin Mini", discount: 0.15 }, // 15%
+  { brand: "BYD", model: "Han", discount: 0.3 }, // 30%
+  { brand: "BYD", model: "King", discount: 0.2 }, // 20%
+  { brand: "BYD", model: "Seal", discount: 0.28 }, // 28%
+  { brand: "BYD", model: "Shark", discount: 0.28 }, // 28%
+  { brand: "BYD", model: "Song Plus", discount: 0.2 }, // 20%
+  { brand: "BYD", model: "Song Plus Premium", discount: 0.2 }, // 20%
+  { brand: "BYD", model: "Song Pro", discount: 0.2 }, // 20%
+  { brand: "BYD", model: "Tan", discount: 0.3 }, // 30%
+  { brand: "BYD", model: "Yuan Plus", discount: 0.25 }, // 25%
+  { brand: "BYD", model: "Yuan Pro", discount: 0.25 }, // 25%
 
   // Ford
   { brand: "Ford", model: "Bronco Sport", discount: 0.22 }, // 22%
@@ -367,20 +376,20 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Nissan", model: "Versa", discount: 0.15 }, // 15%
   { brand: "Nissan", model: "Z", discount: 0.3 }, // 30%
 
-  // Cao Chery
-  { brand: "Cao Chery", model: "Arrizo 5", discount: 0.25 }, // 25%
-  { brand: "Cao Chery", model: "Arrizo 6", discount: 0.25 }, // 25%
-  { brand: "Cao Chery", model: "Arrizo 6 Pro", discount: 0.25 }, // 25%
-  { brand: "Cao Chery", model: "Qq", discount: 0.25 }, // 25%
-  { brand: "Cao Chery", model: "Tiggo 2", discount: 0.2 }, // 20%
-  { brand: "Cao Chery", model: "Tiggo 3x", discount: 0.2 }, // 20%
-  { brand: "Cao Chery", model: "Tiggo 5x Pro", discount: 0.2 }, // 20%
-  { brand: "Cao Chery", model: "Tiggo 5x", discount: 0.2 }, // 20%
-  { brand: "Cao Chery", model: "Tiggo 7", discount: 0.2 }, // 20%
-  { brand: "Cao Chery", model: "Tiggo 7 Pro", discount: 0.2 }, // 20%
-  { brand: "Cao Chery", model: "Tiggo 8", discount: 0.2 }, // 20%
-  { brand: "Cao Chery", model: "Tiggo 8 Pro", discount: 0.2 }, // 20%
-  { brand: "Cao Chery", model: "Icar", discount: 0.25 }, // 25%
+  // Caoa Chery
+  { brand: "Caoa Chery", model: "Arrizo 5", discount: 0.25 }, // 25%
+  { brand: "Caoa Chery", model: "Arrizo 6", discount: 0.25 }, // 25%
+  { brand: "Caoa Chery", model: "Arrizo 6 Pro", discount: 0.25 }, // 25%
+  { brand: "Caoa Chery", model: "Qq", discount: 0.25 }, // 25%
+  { brand: "Caoa Chery", model: "Tiggo 2", discount: 0.2 }, // 20%
+  { brand: "Caoa Chery", model: "Tiggo 3x", discount: 0.2 }, // 20%
+  { brand: "Caoa Chery", model: "Tiggo 5x Pro", discount: 0.2 }, // 20%
+  { brand: "Caoa Chery", model: "Tiggo 5x", discount: 0.2 }, // 20%
+  { brand: "Caoa Chery", model: "Tiggo 7", discount: 0.2 }, // 20%
+  { brand: "Caoa Chery", model: "Tiggo 7 Pro", discount: 0.2 }, // 20%
+  { brand: "Caoa Chery", model: "Tiggo 8", discount: 0.2 }, // 20%
+  { brand: "Caoa Chery", model: "Tiggo 8 Pro", discount: 0.2 }, // 20%
+  { brand: "Caoa Chery", model: "Icar", discount: 0.25 }, // 25%
 
   // Hyundai
   { brand: "Hyundai", model: "Azera", discount: 0.25 }, // 25%
@@ -410,35 +419,59 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
 
 // ---- Matching tolerante a variações de grafia ----
 
-function normalize(s: string): string {
+export function normalize(s: string): string {
+  const combiningMarksPattern = new RegExp('[̀-ͯ]', 'g');
   return s
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(combiningMarksPattern, '')
     .replace(/[^a-z0-9 ]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
+// Tokens de um nome de modelo, para o match parcial por palavra completa.
+// Mantém tokens de 1 letra (ver comentário em lookupDiscount) — importante
+// para o script de verificação (scripts/verify-discount-table.ts) reusar a
+// mesma regra que o app usa em tempo de execução.
+export function tableWordsOf(model: string): string[] {
+  return normalize(model).split(' ').filter(w => w.length >= 1);
+}
+
 // Chave: grafia normalizada da FIPE. Valor: grafia normalizada da planilha.
 const BRAND_ALIASES: Record<string, string> = {
-  'mercedes benz': 'mercedezbenz',   // FIPE usa "Mercedes-Benz"
-  'mercedez benz': 'mercedezbenz',   // planilha usa "Mercedez-Benz" (typo)
-  'mercedes':      'mercedezbenz',
-  'volkswagen':    'volksvagen',
-  'vw':            'volksvagen',
-  'mitsubishi':    'mitsubish',
-  'byd':           'byb',
-  'chery':         'cao chery',
-  'caoa chery':    'cao chery',
+  'mercedes benz':    'mercedezbenz',   // FIPE usa "Mercedes-Benz"
+  'mercedez benz':    'mercedezbenz',   // planilha usa "Mercedez-Benz" (typo)
+  'mercedes':         'mercedezbenz',
+  'volkswagen':       'volkswagen',
+  'vw':               'volkswagen',
+  'vw volkswagen':    'volkswagen',     // fallback caso o corte por " - " não rode
+  'mitsubishi':       'mitsubish',
+  'byd':              'byd',
+  'chery':            'caoa chery',
+  'caoa chery':       'caoa chery',
+  'caoa chery chery': 'caoa chery',     // FIPE tem um 2º código de marca "Caoa Chery/Chery"
+  'gm chevrolet':     'chevrolet',      // fallback caso o corte por " - " não rode
+  'chevrolet':        'chevrolet',
 };
 
 // Normaliza marca, aplicando alias se houver.
+//
+// A FIPE às vezes usa o padrão "SIGLA - Nome Completo" pro campo de marca
+// (confirmado ao vivo na API: "VW - VolksWagen", "GM - Chevrolet"). Sem tratar
+// isso, a marca nunca batia com a tabela e TODO carro dessas marcas caía no
+// desconto padrão (20%) — bug real, não só teórico. Por isso, quando o texto
+// tem " - ", usamos só a parte depois do traço (o nome de verdade da marca)
+// antes de aplicar os aliases de sempre. As entradas 'vw volkswagen' e
+// 'gm chevrolet' no dicionário acima são um fallback extra pro caso de a
+// FIPE mandar o texto colado (sem espaços ao redor do traço) algum dia.
+//
 // "Mercedez-Benz" na planilha normaliza para "mercedezbenz" (sem espaço, typo com z).
 // "MERCEDES-BENZ" da FIPE normaliza para "mercedes benz" → alias → "mercedezbenz". Match!
-function normBrand(raw: string): string {
-  const n = normalize(raw.replace(/-/g, ''));  // remove hífens antes de normalizar
-  return BRAND_ALIASES[normalize(raw)] ?? BRAND_ALIASES[n] ?? normalize(raw);
+export function normBrand(raw: string): string {
+  const afterPrefix = raw.includes(' - ') ? raw.split(' - ').pop()! : raw;
+  const n = normalize(afterPrefix.replace(/-/g, ''));  // remove hífens antes de normalizar
+  return BRAND_ALIASES[normalize(afterPrefix)] ?? BRAND_ALIASES[n] ?? normalize(afterPrefix);
 }
 
 export interface DiscountLookupResult {
@@ -471,13 +504,26 @@ export function lookupDiscount(brand: string, model: string): DiscountLookupResu
   //    tokens do modelo da tabela aparecem como palavras completas no modelo da FIPE.
   //    Ex: tabela "911 Carrera" → tokens ["911", "carrera"] → todos em "911 carrera 4s" → match
   //    Mas "M5" → token ["m5"] → "x5 m50i".split(" ") = ["x5","m50i"] → "m5" não está → no match ✓
+  //
+  //    Quando mais de uma linha da tabela "cabe" no modelo da FIPE (ex: "Range Rover"
+  //    E "Range Rover Sport" cabem em "Range Rover Sport HSE"), fica com a que tem
+  //    mais palavras — a mais específica — em vez da primeira encontrada na lista.
+  //
+  //    Importante: mantemos até tokens de 1 letra. A Mercedez-Benz usa letra de
+  //    classe + número ("A 200", "C 200", "S 560"...) — se descartássemos a letra,
+  //    "A 200" e "C 200" virariam o mesmo token ["200"] e a primeira da lista
+  //    venceria mesmo para um "C 200" (bug real, achado ao testar essa correção).
   const nmWords = nm.split(' ');
-  const partial = DISCOUNT_TABLE.find((e) => {
+  const candidates = DISCOUNT_TABLE.filter((e) => {
     if (normBrand(e.brand) !== nb) return false;
-    const tableWords = normalize(e.model).split(' ').filter(w => w.length >= 2);
-    if (tableWords.length === 0) return false;
-    return tableWords.every(w => nmWords.includes(w));
+    const tableWords = tableWordsOf(e.model);
+    return tableWords.length > 0 && tableWords.every(w => nmWords.includes(w));
   });
+  const partial = candidates.length > 0
+    ? candidates.reduce((best, cur) =>
+        tableWordsOf(cur.model).length > tableWordsOf(best.model).length ? cur : best
+      )
+    : undefined;
   if (partial) {
     return { discount: partial.discount, discountPercent: Math.round(partial.discount * 100), source: 'table', matchedBrand: partial.brand, matchedModel: partial.model };
   }

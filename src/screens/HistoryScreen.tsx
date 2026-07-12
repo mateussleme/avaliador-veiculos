@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -8,7 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { fetchEvaluations } from '../services/evaluationService';
+import { deleteEvaluation, fetchEvaluations } from '../services/evaluationService';
 import { supabase } from '../lib/supabase';
 import { EvaluationWithOutcome } from '../types/database';
 import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
@@ -68,6 +69,28 @@ export function HistoryScreen({ onSelectEvaluation, refreshTrigger }: HistoryScr
 
   useEffect(() => { load(); }, [load, refreshTrigger]);
 
+  async function handleDelete(id: string) {
+    const previous = evaluations;
+    setEvaluations(evs => evs.filter(e => e.id !== id)); // otimista
+    try {
+      await deleteEvaluation(id);
+    } catch (err: any) {
+      setEvaluations(previous); // desfaz se der erro
+      Alert.alert('Erro ao apagar', err.message ?? 'Tente novamente.');
+    }
+  }
+
+  function confirmDelete(item: EvaluationWithOutcome) {
+    Alert.alert(
+      'Apagar avaliação?',
+      `${item.brand} ${item.model} (${item.model_year}) será removido do histórico. Essa ação não pode ser desfeita.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Apagar', style: 'destructive', onPress: () => handleDelete(item.id) },
+      ]
+    );
+  }
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -107,7 +130,12 @@ export function HistoryScreen({ onSelectEvaluation, refreshTrigger }: HistoryScr
       contentContainerStyle={styles.list}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={colors.ink} />}
       renderItem={({ item }) => (
-        <Pressable onPress={() => onSelectEvaluation(item)} style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+        <Pressable
+          onPress={() => onSelectEvaluation(item)}
+          onLongPress={() => confirmDelete(item)}
+          delayLongPress={450}
+          style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+        >
           <View style={styles.cardHeader}>
             <View style={styles.cardTitleWrap}>
               <Text style={styles.cardVehicle} numberOfLines={1}>{item.brand} {item.model}</Text>

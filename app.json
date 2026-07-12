@@ -2,7 +2,7 @@
   "expo": {
     "name": "AutoValor",
     "slug": "avaliador-veiculos",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -36,11 +36,22 @@
     "scheme": "avaliadorveiculos",
     "plugins": [
       "expo-secure-store",
-      "expo-font"
+      "expo-font",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "newArchEnabled": true
+    "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9fb54ae3-6ef5-4cd1-b193-f0ccd7ad84d6",
+      "requestHeaders": {
+        "expo-channel-name": "production"
+      }
+    }
   }
 }

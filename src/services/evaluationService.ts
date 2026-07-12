@@ -48,6 +48,20 @@ export async function saveEvaluation(data: SaveEvaluationInput): Promise<string>
   return saved.id;
 }
 
+export async function deleteEvaluation(evaluationId: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Login necessário para apagar avaliações.');
+
+  // RLS ("Usuário gerencia as próprias avaliações") garante que só é possível
+  // apagar avaliação do próprio usuário, mesmo que o id seja manipulado no cliente.
+  const { error } = await supabase
+    .from('evaluations')
+    .delete()
+    .eq('id', evaluationId);
+
+  if (error) throw new Error(error.message);
+}
+
 export async function fetchEvaluations(limit = 50): Promise<EvaluationWithOutcome[]> {
   const { data, error } = await supabase
     .from('evaluations_with_outcome')

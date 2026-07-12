@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityIndicator, BackHandler, Platform, StyleSheet, View } from 'react-native';
-import * as Font from 'expo-font';
 import type { Session } from '@supabase/supabase-js';
 
 import { supabase } from './src/lib/supabase';
 import { AppHeader } from './src/components/AppHeader';
+import { LaunchScreen } from './src/components/LaunchScreen';
 import { TabBar, TabKey } from './src/components/TabBar';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { PrivacyScreen } from './src/screens/PrivacyScreen';
@@ -34,41 +34,9 @@ type EvalStep = 'search' | 'version-select' | 'form' | 'result';
 type HistoryStep = 'list' | 'detail' | 'outcome';
 
 export default function App() {
-  const [fontsLoaded, setFontsLoaded] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession]     = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(REQUIRE_AUTH);
-  // ---- Carregamento de fontes customizadas ----
-  useEffect(() => {
-    async function loadFonts() {
-      try {
-        await Font.loadAsync({
-          // Inter — corpo de texto, labels, dados
-          Inter: require('./assets/fonts/Inter-Regular.ttf'),
-          'Inter-Medium': require('./assets/fonts/Inter-Medium.ttf'),
-          'Inter-SemiBold': require('./assets/fonts/Inter-SemiBold.ttf'),
-          'Inter-Bold': require('./assets/fonts/Inter-Bold.ttf'),
-          'Inter-ExtraBold': require('./assets/fonts/Inter-ExtraBold.ttf'),
-          // Inter Display — textos de alto impacto visual
-          'Inter Display': require('./assets/fonts/InterDisplay-Regular.ttf'),
-          'Inter Display-Medium': require('./assets/fonts/InterDisplay-Medium.ttf'),
-          'Inter Display-SemiBold': require('./assets/fonts/InterDisplay-SemiBold.ttf'),
-          'Inter Display-Bold': require('./assets/fonts/InterDisplay-Bold.ttf'),
-          'Inter Display-ExtraBold': require('./assets/fonts/InterDisplay-ExtraBold.ttf'),
-          // Space Grotesk — títulos, destaques, valores de preço
-          SpaceGrotesk: require('./assets/fonts/SpaceGrotesk-Regular.ttf'),
-          'SpaceGrotesk-Light': require('./assets/fonts/SpaceGrotesk-Light.ttf'),
-          'SpaceGrotesk-Medium': require('./assets/fonts/SpaceGrotesk-Medium.ttf'),
-          'SpaceGrotesk-Bold': require('./assets/fonts/SpaceGrotesk-Bold.ttf'),
-        });
-        setFontsLoaded(true);
-      } catch (err) {
-        console.error('Erro ao carregar fontes:', err);
-        setFontsLoaded(true); // não travar o app se a fonte falhar
-      }
-    }
-    loadFonts();
-  }, []);
-
+  const [showLaunch, setShowLaunch] = useState(true);
 
   useEffect(() => {
     if (!REQUIRE_AUTH) return;
@@ -86,12 +54,12 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>('evaluate');
 
   // ---- Fluxo de avaliação ----
-  const [evalStep, setEvalStep] = useState<EvalStep>('search');
-  const [kind, setKind] = useState<VehicleKind>('cars');
-  const [vehicle, setVehicle] = useState<FipeVehicleInfo | null>(null);
+  const [evalStep, setEvalStep]   = useState<EvalStep>('search');
+  const [kind, setKind]           = useState<VehicleKind>('cars');
+  const [vehicle, setVehicle]     = useState<FipeVehicleInfo | null>(null);
   const [allMatches, setAllMatches] = useState<FipeVersionMatch[] | null>(null);
   const [evalInput, setEvalInput] = useState<EvaluationInput | null>(null);
-  const [result, setResult] = useState<EvaluationResult | null>(null);
+  const [result, setResult]       = useState<EvaluationResult | null>(null);
   const [searchedPlate, setSearchedPlate] = useState<string | undefined>(undefined);
 
   // ---- Fluxo de histórico ----
@@ -192,16 +160,16 @@ export default function App() {
       case 'result':         return { title: 'Resultado', onBack: () => setEvalStep('form') };
     }
   }
-// ---- Carregando fontes ----
-  if (!fontsLoaded) {
+
+  // ---- Launch Screen (logo com fade/scale, sobre o mesmo fundo do splash nativo) ----
+  if (showLaunch) {
     return (
       <SafeAreaProvider>
-        <SafeAreaView style={styles.loadingRoot}>
-          <ActivityIndicator size="large" color={colors.ink} />
-        </SafeAreaView>
+        <LaunchScreen onFinish={() => setShowLaunch(false)} />
       </SafeAreaProvider>
     );
   }
+
   // ---- Carregando sessão ----
   if (authLoading) {
     return (
