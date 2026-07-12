@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { fetchBrands, fetchModels, fetchVehicleInfo, fetchYears, FipeApiError } from '../api/fipeApi';
+import { fetchBrands, fetchModels, fetchVehicleInfo, fetchYears, FipeApiError, formatModelYear } from '../api/fipeApi';
 import { fetchVehicleByPlate, FipeVersionMatch, PlateApiError, PlateLookupResult } from '../api/plateApi';
 import { filterBrazilianMarketBrands } from '../domain/brBrands';
 import { formatPlateHint, parsePlate } from '../domain/plateValidation';
@@ -233,7 +233,7 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
                 {manualVehicleInfo.brand} {manualVehicleInfo.model}
               </Text>
               <Text style={styles.vehicleMeta}>
-                {manualVehicleInfo.modelYear} · {manualVehicleInfo.fuel} · ref.{' '}
+                {formatModelYear(manualVehicleInfo)} · {manualVehicleInfo.fuel} · ref.{' '}
                 {manualVehicleInfo.referenceMonth}
               </Text>
               <Text style={styles.priceValue}>{manualVehicleInfo.priceLabel}</Text>
@@ -280,7 +280,7 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
                 {plateResult.vehicle.brand} {plateResult.vehicle.model}
               </Text>
               <Text style={styles.vehicleMeta}>
-                {KIND_LABEL[plateResult.kind]} · {plateResult.vehicle.modelYear} ·{' '}
+                {KIND_LABEL[plateResult.kind]} · {formatModelYear(plateResult.vehicle)} ·{' '}
                 {plateResult.vehicle.fuel} · ref. {plateResult.vehicle.referenceMonth}
               </Text>
               <Text style={styles.priceValue}>{plateResult.vehicle.priceLabel}</Text>

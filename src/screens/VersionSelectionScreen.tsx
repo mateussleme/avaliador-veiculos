@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FipeVersionMatch } from '../api/plateApi';
+import { formatModelYear } from '../api/fipeApi';
 import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
 import { VehicleKind } from '../domain/types';
@@ -75,7 +76,7 @@ export function VersionSelectionScreen({
                   )}
                 </View>
                 <Text style={styles.versionMeta}>
-                  {match.vehicle.modelYear} · {match.vehicle.fuel} · cód. {match.vehicle.codeFipe}
+                  {formatModelYear(match.vehicle)} · {match.vehicle.fuel} · cód. {match.vehicle.codeFipe}
                 </Text>
                 <Text style={[styles.versionPrice, isSelected && styles.versionPriceSelected]}>
                   {match.vehicle.priceLabel}

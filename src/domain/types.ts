@@ -28,6 +28,11 @@ export interface FipeVehicleInfo {
   priceLabel: string; // "R$ 45.000,00" — como a FIPE formata
   priceValue: number; // 45000 — convertido para number
   referenceMonth: string;
+  // A FIPE usa o ano "32000" como convenção interna para veículo 0km (sem
+  // ano de modelo definido ainda). Quando isso acontece, normalizamos
+  // modelYear para o ano atual (mantém os cálculos de depreciação corretos)
+  // e marcamos isZeroKm para a tela exibir "0 km" em vez do número cru.
+  isZeroKm?: boolean;
 }
 
 // ---- Métricas de avaliação informadas pelo usuário ----

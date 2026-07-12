@@ -3,6 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
 import { GaugeBar } from '../components/GaugeBar';
+import { formatModelYear } from '../api/fipeApi';
 import { ADJUSTMENT_RANGE } from '../domain/evaluationEngine';
 import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 import { AdjustmentSeverity, EvaluationInput, EvaluationResult, FipeVehicleInfo, VehicleKind } from '../domain/types';
@@ -71,7 +72,7 @@ export function ResultScreen({ kind, vehicle, input, result, plate, sessionToken
         {vehicle.brand} {vehicle.model}
       </Text>
       <Text style={styles.vehicleMeta}>
-        {vehicle.modelYear} · {vehicle.fuel} · {result.mileageKm.toLocaleString('pt-BR')} km ·
+        {formatModelYear(vehicle)} · {vehicle.fuel} · {result.mileageKm.toLocaleString('pt-BR')} km ·
         referência {vehicle.referenceMonth}
       </Text>
 

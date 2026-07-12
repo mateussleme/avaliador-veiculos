@@ -50,12 +50,28 @@ export async function fetchModels(kind: VehicleKind, brandCode: string): Promise
   return fipeFetch<FipeModel[]>(`/${kind}/brands/${brandCode}/models`);
 }
 
+// A FIPE usa "32000" como ano de convenção interna para veículo 0km (sem
+// ano de modelo definido ainda) — ex: code "32000-5", name "32000 Flex".
+// Mostrar esse número cru pro usuário ("32000 Gasolina") é confuso, então
+// trocamos o rótulo por "0 km" aqui. O code original não muda: ele ainda é
+// o que a API espera para consultar o preço em fetchVehicleInfo.
+const ZERO_KM_YEAR_PREFIX = '32000';
+
+function isZeroKmYearCode(code: string): boolean {
+  return code.startsWith(`${ZERO_KM_YEAR_PREFIX}-`);
+}
+
 export async function fetchYears(
   kind: VehicleKind,
   brandCode: string,
   modelCode: string
 ): Promise<FipeYear[]> {
-  return fipeFetch<FipeYear[]>(`/${kind}/brands/${brandCode}/models/${modelCode}/years`);
+  const years = await fipeFetch<FipeYear[]>(`/${kind}/brands/${brandCode}/models/${modelCode}/years`);
+  return years.map((y) =>
+    isZeroKmYearCode(y.code)
+      ? { ...y, name: y.name.replace(ZERO_KM_YEAR_PREFIX, '0 km') }
+      : y
+  );
 }
 
 function parsePriceLabel(label: string): number {
@@ -84,16 +100,36 @@ export async function fetchVehicleInfo(
     referenceMonth: string;
   }>(`/${kind}/brands/${brandCode}/models/${modelCode}/years/${yearCode}`);
 
+  // raw.modelYear vem como 32000 (numérico) pra veículo 0km — normalizamos
+  // pro ano atual (mantém a lógica de "veículo novo" do motor de avaliação
+  // correta, já que ela já trata modelYear >= anoAtual como 0km) e marcamos
+  // isZeroKm pra tela mostrar "0 km" em vez do "32000" cru.
+  const isZeroKm = raw.modelYear === 32000;
+
   return {
     brand: raw.brand,
     model: raw.model,
-    modelYear: raw.modelYear,
+    modelYear: isZeroKm ? new Date().getFullYear() : raw.modelYear,
     fuel: raw.fuel,
     codeFipe: raw.codeFipe,
     priceLabel: raw.price,
     priceValue: parsePriceLabel(raw.price),
     referenceMonth: raw.referenceMonth,
+    isZeroKm,
   };
+}
+
+// Formata o ano do modelo pra exibição: "0 km" pra veículos 0km da FIPE,
+// ou o ano normal como texto. Use isso em vez de mostrar vehicle.modelYear
+// direto sempre que for exibir pro usuário.
+//
+// Checa isZeroKm E o valor cru 32000: a consulta por placa passa pelo
+// backend (Node/Vercel, fora deste repo), que pode devolver o modelYear da
+// FIPE sem passar pela normalização feita aqui em fetchVehicleInfo — então
+// esse fallback numérico garante que "0 km" apareça mesmo nesse caminho.
+export function formatModelYear(vehicle: Pick<FipeVehicleInfo, 'modelYear' | 'isZeroKm'>): string {
+  if (vehicle.isZeroKm || vehicle.modelYear === 32000) return '0 km';
+  return String(vehicle.modelYear);
 }
 
 export { FipeApiError };
