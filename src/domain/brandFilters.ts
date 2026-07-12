@@ -64,3 +64,48 @@ export function filterBrazilianMarketBrands(
   const excluded = kind === 'cars' ? EXCLUDED_CAR_BRANDS : EXCLUDED_MOTORCYCLE_BRANDS;
   return brands.filter((brand) => !excluded.has(brand.name));
 }
+
+// ---- Lista curada (allowlist) para a visão padrão da tela de busca ----
+//
+// Diferente da exclusão acima (que só remove marcas historicamente
+// irrelevantes), esta é uma lista positiva de palavras-chave de marcas
+// atualmente comuns no mercado brasileiro. Usada como um segundo filtro,
+// opcional, só na UI de busca manual — a tela sempre oferece "Mostrar
+// todas as marcas" pra cair de volta na lista já filtrada acima, então
+// nenhuma marca fica de fato inacessível.
+//
+// Havia uma cópia quase idêntica desta função em domain/brBrands.ts, com o
+// mesmo nome mas argumentos na ordem invertida — um risco real de bug caso
+// alguém trocasse o import sem perceber. Consolidado aqui num nome
+// diferente (filterCuratedBrands) pra eliminar a ambiguidade.
+const CAR_BRAND_KEYWORDS = [
+  'volkswagen', 'vw', 'chevrolet', 'gm -', 'fiat', 'ford', 'toyota', 'honda',
+  'hyundai', 'renault', 'nissan', 'jeep', 'peugeot', 'citro', 'mitsubishi',
+  'kia', 'bmw', 'mercedes', 'audi', 'volvo', 'land rover', 'mini', 'subaru',
+  'suzuki', 'ram', 'byd', 'gwm', 'great wall', 'caoa', 'chery', 'jac',
+  'jaecoo', 'omoda', 'gac', 'jetour', 'geely', 'changan', 'dfsk', 'porsche',
+  'jaguar', 'lexus', 'mazda', 'neta', 'troller', 'seres', 'denza', 'zeekr',
+  'leapmotor', 'iveco', 'foton', 'ssangyong', 'alfa romeo', 'mg',
+];
+
+const MOTORCYCLE_BRAND_KEYWORDS = [
+  'honda', 'yamaha', 'suzuki', 'kawasaki', 'bmw', 'harley', 'triumph',
+  'ducati', 'ktm', 'royal enfield', 'dafra', 'shineray', 'haojue', 'cfmoto',
+  'cf moto', 'voltz', 'sundown', 'kasinski', 'traxx', 'husqvarna', 'aprilia',
+  'piaggio', 'vespa', 'indian', 'moto guzzi', 'bull',
+];
+
+function curatedKeywordsFor(kind: VehicleKind): string[] {
+  return kind === 'cars' ? CAR_BRAND_KEYWORDS : MOTORCYCLE_BRAND_KEYWORDS;
+}
+
+export function filterCuratedBrands(
+  kind: VehicleKind,
+  brands: FipeBrand[]
+): FipeBrand[] {
+  const keywords = curatedKeywordsFor(kind);
+  return brands.filter((brand) => {
+    const name = brand.name.toLowerCase();
+    return keywords.some((keyword) => name.includes(keyword));
+  });
+}

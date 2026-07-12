@@ -26,6 +26,11 @@ interface EvaluationFormScreenProps {
   onResult: (result: EvaluationResult, input: EvaluationInput) => void;
 }
 
+function clampInput(value: number, max: number): number {
+  if (!Number.isFinite(value) || value < 0) return 0;
+  return Math.min(value, max);
+}
+
 const MOTO_TIRE_OPTIONS: { value: '1' | '2'; label: string }[] = [
   { value: '1', label: '1 pneu novo' },
   { value: '2', label: '2 pneus novos' },
@@ -61,18 +66,26 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
     ? Number(motoTireValue)
     : Number(carTireValue);
 
-  const repaintPieces = parseInt(repaintPiecesText, 10) || 0;
-  const repaintWheels = parseInt(repaintWheelsText, 10) || 0;
+  // Limites de sanidade: nada aqui é "seguro" no sentido de ataque (é tudo
+  // local, sem backend), mas sem teto um erro de digitação (ex: um zero a
+  // mais) gera uma avaliação sem sentido. 500.000 km e 8 peças/rodas cobrem
+  // qualquer caso real de veículo seminovo com folga.
+  const MAX_MILEAGE_KM = 500000;
+  const MAX_REPAINT_PIECES = 8;
+  const MAX_REPAINT_WHEELS = 8;
+
+  const repaintPieces = clampInput(parseInt(repaintPiecesText, 10) || 0, MAX_REPAINT_PIECES);
+  const repaintWheels = clampInput(parseInt(repaintWheelsText, 10) || 0, MAX_REPAINT_WHEELS);
   const repaintCostPreview = repaintPieces * 800 + repaintWheels * 300;
 
   const mileagePreview = useMemo(() => {
-    const mileage = Number(mileageText.replace(/\D/g, ''));
+    const mileage = clampInput(Number(mileageText.replace(/\D/g, '')), MAX_MILEAGE_KM);
     if (!mileage || mileage <= 0) return null;
     return previewMileageAdjustment(mileage, vehicle.modelYear);
   }, [mileageText, vehicle.modelYear]);
 
   function handleSubmit() {
-    const mileage = Number(mileageText.replace(/\D/g, ''));
+    const mileage = clampInput(Number(mileageText.replace(/\D/g, '')), MAX_MILEAGE_KM);
     if (!mileageText || mileage <= 0) {
       setMileageError('Informe a quilometragem atual do veículo.');
       return;
@@ -114,6 +127,7 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
             placeholder="Ex: 65000"
             placeholderTextColor={colors.textTertiary}
             keyboardType="number-pad"
+            maxLength={6}
             style={styles.input}
           />
           {mileageError ? <Text style={styles.fieldError}>{mileageError}</Text> : null}
@@ -202,6 +216,7 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
                 placeholder="Ex: 2"
                 placeholderTextColor={colors.textTertiary}
                 keyboardType="number-pad"
+                maxLength={1}
                 style={styles.input}
               />
 
@@ -214,6 +229,7 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
                 placeholder="Ex: 4"
                 placeholderTextColor={colors.textTertiary}
                 keyboardType="number-pad"
+                maxLength={1}
                 style={styles.input}
               />
 

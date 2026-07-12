@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { fetchBrands, fetchModels, fetchVehicleInfo, fetchYears, FipeApiError, formatModelYear } from '../api/fipeApi';
 import { fetchVehicleByPlate, FipeVersionMatch, PlateApiError, PlateLookupResult } from '../api/plateApi';
-import { filterBrazilianMarketBrands } from '../domain/brBrands';
+import { filterCuratedBrands } from '../domain/brandFilters';
 import { formatPlateHint, parsePlate } from '../domain/plateValidation';
 import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
@@ -84,7 +84,7 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
   // Se o filtro não achar nada (ou o usuário pedir), mostra a lista completa.
   const brands = useMemo(() => {
     if (showAllBrands) return rawBrands;
-    const filtered = filterBrazilianMarketBrands(rawBrands, kind);
+    const filtered = filterCuratedBrands(kind, rawBrands);
     return filtered.length > 0 ? filtered : rawBrands;
   }, [rawBrands, showAllBrands, kind]);
 
