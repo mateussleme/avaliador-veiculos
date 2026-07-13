@@ -28,6 +28,11 @@ export interface Evaluation {
   standard_value: number;
   adjustment_percent: number;
   estimated_value: number;
+  is_armored: boolean;
+  is_armored_3a: boolean;
+  has_delamination: boolean;
+  delaminated_window_count: number;
+  armor_adjustment_value: number;
   notes: string | null;
   created_at: string;
 }

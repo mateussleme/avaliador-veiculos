@@ -208,6 +208,118 @@ function buildPreparationCostLine(
   };
 }
 
+// ---- Blindagem ----
+//
+// Diferente dos outros ajustes (percentuais sobre o valor FIPE), a
+// blindagem soma ou subtrai um valor FIXO em R$, direto na oferta final.
+// Um blindado novo agrega valor (a blindagem ainda está intacta); a manta
+// balística começa a delaminar a partir de ~5 anos, e um blindado velho
+// vale MENOS que o equivalente sem blindagem — por isso os valores das
+// faixas de idade mais altas são negativos.
+interface ArmorPriceBracket {
+  upToPrice: number; // Infinity para "acima de X"
+  amount: number;    // R$: positivo = soma na oferta, negativo = desconta
+}
+interface ArmorAgeTier {
+  maxAge: number; // idade máxima (inclusive) da faixa, Infinity para "acima de X"
+  brackets: ArmorPriceBracket[];
+}
+
+const ARMOR_TIERS: ArmorAgeTier[] = [
+  { maxAge: 2, brackets: [
+    { upToPrice: 200000, amount: 40000 },
+    { upToPrice: 300000, amount: 50000 },
+    { upToPrice: 400000, amount: 60000 },
+    { upToPrice: Infinity, amount: 70000 },
+  ]},
+  { maxAge: 4, brackets: [
+    { upToPrice: 200000, amount: 25000 },
+    { upToPrice: 300000, amount: 35000 },
+    { upToPrice: 400000, amount: 45000 },
+    { upToPrice: Infinity, amount: 60000 },
+  ]},
+  { maxAge: 6, brackets: [
+    { upToPrice: 200000, amount: 15000 },
+    { upToPrice: 300000, amount: 25000 },
+    { upToPrice: 400000, amount: 35000 },
+    { upToPrice: Infinity, amount: 40000 },
+  ]},
+  { maxAge: 8, brackets: [
+    { upToPrice: Infinity, amount: 0 }, // 7-8 anos: não soma nem desconta
+  ]},
+  { maxAge: Infinity, brackets: [
+    { upToPrice: 100000, amount: -10000 },
+    { upToPrice: 150000, amount: -15000 },
+    { upToPrice: 200000, amount: -20000 },
+    { upToPrice: 300000, amount: -25000 },
+    { upToPrice: 400000, amount: -30000 },
+    { upToPrice: Infinity, amount: -30000 },
+  ]},
+];
+
+const DELAMINATION_PENALTY_PER_WINDOW = 6000; // R$ por vidro delaminado
+export const MAX_DELAMINATED_WINDOWS = 7;
+
+function armorAgeYears(modelYear: number): number {
+  return Math.max(new Date().getFullYear() - modelYear, 0);
+}
+
+function armorTierAmount(ageYears: number, fipePrice: number): number {
+  const tier = ARMOR_TIERS.find((t) => ageYears <= t.maxAge) ?? ARMOR_TIERS[ARMOR_TIERS.length - 1];
+  const bracket = tier.brackets.find((b) => fipePrice <= b.upToPrice) ?? tier.brackets[tier.brackets.length - 1];
+  return bracket.amount;
+}
+
+export interface ArmorPreview {
+  ageYears: number;
+  tierAmount: number;
+  delaminationPenalty: number;
+  total: number;
+}
+
+export function previewArmorAdjustment(
+  modelYear: number,
+  fipePrice: number,
+  delaminatedWindowCount: number
+): ArmorPreview {
+  const ageYears = armorAgeYears(modelYear);
+  const tierAmount = armorTierAmount(ageYears, fipePrice);
+  const delaminationPenalty = clamp(Math.round(delaminatedWindowCount), 0, MAX_DELAMINATED_WINDOWS) * DELAMINATION_PENALTY_PER_WINDOW;
+  return { ageYears, tierAmount, delaminationPenalty, total: tierAmount - delaminationPenalty };
+}
+
+function buildArmorLine(
+  isArmored: boolean,
+  modelYear: number,
+  fipePrice: number,
+  delaminatedWindowCount: number
+): AdjustmentLine | null {
+  if (!isArmored) return null;
+
+  const { ageYears, tierAmount, delaminationPenalty, total } = previewArmorAdjustment(
+    modelYear,
+    fipePrice,
+    delaminatedWindowCount
+  );
+
+  const parts: string[] = [
+    `${ageYears} ano(s) de uso: ${tierAmount >= 0 ? '+' : ''}R$ ${tierAmount.toLocaleString('pt-BR')}`,
+  ];
+  if (delaminationPenalty > 0) {
+    const windows = clamp(Math.round(delaminatedWindowCount), 0, MAX_DELAMINATED_WINDOWS);
+    parts.push(`${windows} vidro(s) delaminado(s): -R$ ${delaminationPenalty.toLocaleString('pt-BR')}`);
+  }
+
+  return {
+    label: `Blindagem — ${total >= 0 ? '+' : ''}R$ ${total.toLocaleString('pt-BR')}`,
+    detail: parts.join(' · '),
+    percent: 0,
+    // amountDeduction negativo aqui = soma na oferta final; ver evaluateVehicle().
+    amountDeduction: -total,
+    severity: total > 0 ? 'good' : total < 0 ? 'danger' : 'neutral',
+  };
+}
+
 export function evaluateVehicle(input: EvaluationInput): EvaluationResult {
   // 1. Desconto base por modelo (tabela ou padrão)
   const discountLookup: DiscountLookupResult = lookupDiscount(
@@ -235,12 +347,23 @@ export function evaluateVehicle(input: EvaluationInput): EvaluationResult {
   );
   const preparationCost = prepLine?.amountDeduction ?? 0;
 
-  const lines: AdjustmentLine[] = prepLine
-    ? [...percentLines, prepLine]
-    : percentLines;
+  // 3b. Blindagem (soma ou desconta um valor fixo em R$, ver buildArmorLine)
+  const armorLine = buildArmorLine(
+    input.isArmored,
+    input.vehicle.modelYear,
+    input.vehicle.priceValue,
+    input.delaminatedWindowCount
+  );
+  const armorAdjustmentValue = armorLine ? -(armorLine.amountDeduction ?? 0) : 0;
+
+  const lines: AdjustmentLine[] = [
+    ...percentLines,
+    ...(armorLine ? [armorLine] : []),
+    ...(prepLine ? [prepLine] : []),
+  ];
 
   // 4. Valor final e repasse
-  const finalOfferValue = Math.max(0, estimatedValue - preparationCost);
+  const finalOfferValue = Math.max(0, estimatedValue - preparationCost + armorAdjustmentValue);
   const repasseValue = finalOfferValue * REPASSE_PERCENT;
 
   let positionLabel: EvaluationResult['positionLabel'] = 'No padrão';
@@ -256,6 +379,7 @@ export function evaluateVehicle(input: EvaluationInput): EvaluationResult {
     adjustmentPercent,
     estimatedValue,
     preparationCost,
+    armorAdjustmentValue,
     finalOfferValue,
     repasseValue,
     lines,

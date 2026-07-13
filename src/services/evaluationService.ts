@@ -40,6 +40,11 @@ export async function saveEvaluation(data: SaveEvaluationInput): Promise<string>
       standard_value:        data.result.standardValue,
       adjustment_percent:    data.result.adjustmentPercent,
       estimated_value:       data.result.estimatedValue,
+      is_armored:            data.input.isArmored,
+      is_armored_3a:         data.input.isArmored3A,
+      has_delamination:      data.input.hasDelamination,
+      delaminated_window_count: data.input.delaminatedWindowCount,
+      armor_adjustment_value:   data.result.armorAdjustmentValue,
     })
     .select('id')
     .single();

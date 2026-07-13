@@ -230,7 +230,10 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Honda", model: "Accord", discount: 0.3 }, // 30%
   { brand: "Honda", model: "City", discount: 0.15 }, // 15%
   { brand: "Honda", model: "Civic", discount: 0.15 }, // 15%
-  { brand: "Honda", model: "Crv", discount: 0.25 }, // 25%
+  // CR-V: só a versão Híbrida tem 25%. Confirmado ao vivo na FIPE que hoje
+  // só existe UMA versão "(Híbrido)" ("CR-V Touring 2.0 16V AWD Aut.(Híbrido)");
+  // as demais versões (2.0/2.4 a combustão) caem no padrão de 20%.
+  { brand: "Honda", model: "Cr-v Hibrido", discount: 0.25 }, // 25%
   { brand: "Honda", model: "Fit", discount: 0.15 }, // 15%
   { brand: "Honda", model: "Hr-v", discount: 0.18 }, // 18%
   { brand: "Honda", model: "Wr-v", discount: 0.15 }, // 15%

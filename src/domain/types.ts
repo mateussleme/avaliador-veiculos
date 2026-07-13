@@ -47,6 +47,13 @@ export interface EvaluationInput {
   hasRepaint: boolean;             // há repintura identificada
   repaintPiecesCount: number;      // número de peças para pintar (R$800 cada)
   repaintWheelsCount: number;      // número de rodas para pintar (R$300 cada)
+  // Blindagem — só se aplica a carros (kind === 'cars').
+  isArmored: boolean;
+  isArmored3A: boolean;            // nível de blindagem mais comum no Brasil.
+                                    // Guardado como metadado pra histórico/análise futura;
+                                    // não muda o cálculo hoje (só existe uma tabela de valores).
+  hasDelamination: boolean;
+  delaminatedWindowCount: number;  // 0-7, cada vidro delaminado desconta R$6.000
 }
 
 export type AdjustmentSeverity = 'good' | 'neutral' | 'caution' | 'danger';
@@ -68,7 +75,8 @@ export interface EvaluationResult {
   adjustmentPercent: number;      // soma dos ajustes percentuais (km + pneus + revisão + repintura %)
   estimatedValue: number;         // standardValue × (1 + adjustmentPercent/100)
   preparationCost: number;        // custo de preparação em R$ (peças + rodas para pintar)
-  finalOfferValue: number;        // estimatedValue - preparationCost = valor da oferta de compra
+  armorAdjustmentValue: number;   // blindagem em R$: positivo = bônus (carro novo), negativo = desconto (idade/delaminação)
+  finalOfferValue: number;        // estimatedValue - preparationCost + armorAdjustmentValue = valor da oferta de compra
   repasseValue: number;           // finalOfferValue × 0.92 = valor para repasse
   lines: AdjustmentLine[];
   positionLabel: 'Abaixo do padrão' | 'No padrão' | 'Acima do padrão';

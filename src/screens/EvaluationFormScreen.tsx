@@ -8,7 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { evaluateVehicle, previewMileageAdjustment } from '../domain/evaluationEngine';
+import { evaluateVehicle, previewArmorAdjustment, previewMileageAdjustment } from '../domain/evaluationEngine';
 import {
   EvaluationInput,
   EvaluationResult,
@@ -43,6 +43,16 @@ const CAR_TIRE_OPTIONS: { value: '1' | '2' | '3' | '4'; label: string }[] = [
   { value: '4', label: '4 pneus' },
 ];
 
+const DELAMINATED_WINDOW_OPTIONS: { value: '1' | '2' | '3' | '4' | '5' | '6' | '7'; label: string }[] = [
+  { value: '1', label: '1' },
+  { value: '2', label: '2' },
+  { value: '3', label: '3' },
+  { value: '4', label: '4' },
+  { value: '5', label: '5' },
+  { value: '6', label: '6' },
+  { value: '7', label: '7' },
+];
+
 export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationFormScreenProps) {
   const [mileageText, setMileageText]             = useState('');
   const [mileageError, setMileageError]           = useState<string | null>(null);
@@ -59,6 +69,12 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
   const [hasRepaint, setHasRepaint]               = useState(false);
   const [repaintPiecesText, setRepaintPiecesText] = useState('');
   const [repaintWheelsText, setRepaintWheelsText] = useState('');
+
+  // Blindagem (só carros)
+  const [isArmored, setIsArmored]                 = useState(false);
+  const [isArmored3A, setIsArmored3A]             = useState(false);
+  const [hasDelamination, setHasDelamination]     = useState(false);
+  const [delaminatedWindowValue, setDelaminatedWindowValue] = useState<'1' | '2' | '3' | '4' | '5' | '6' | '7'>('1');
 
   const maxTires = kind === 'motorcycles' ? 2 : 4;
 
@@ -84,6 +100,13 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
     return previewMileageAdjustment(mileage, vehicle.modelYear);
   }, [mileageText, vehicle.modelYear]);
 
+  const delaminatedWindowCount = hasDelamination ? Number(delaminatedWindowValue) : 0;
+
+  const armorPreview = useMemo(() => {
+    if (!isArmored) return null;
+    return previewArmorAdjustment(vehicle.modelYear, vehicle.priceValue, delaminatedWindowCount);
+  }, [isArmored, vehicle.modelYear, vehicle.priceValue, delaminatedWindowCount]);
+
   function handleSubmit() {
     const mileage = clampInput(Number(mileageText.replace(/\D/g, '')), MAX_MILEAGE_KM);
     if (!mileageText || mileage <= 0) {
@@ -102,6 +125,10 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
       hasRepaint,
       repaintPiecesCount: hasRepaint ? repaintPieces : 0,
       repaintWheelsCount: hasRepaint ? repaintWheels : 0,
+      isArmored: kind === 'cars' ? isArmored : false,
+      isArmored3A: kind === 'cars' && isArmored ? isArmored3A : false,
+      hasDelamination: kind === 'cars' && isArmored ? hasDelamination : false,
+      delaminatedWindowCount: kind === 'cars' && isArmored ? delaminatedWindowCount : 0,
     };
 
     onResult(evaluateVehicle(input), input);
@@ -246,6 +273,60 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
             </View>
           )}
         </Card>
+
+        {/* Blindagem (só carros) */}
+        {kind === 'cars' && (
+          <Card style={styles.card}>
+            <SectionLabel>Blindagem</SectionLabel>
+            <ToggleRow
+              label="Veículo é blindado?"
+              value={isArmored}
+              onChange={setIsArmored}
+            />
+
+            {isArmored && (
+              <View style={styles.subField}>
+                <ToggleRow
+                  label="Blindagem nível III-A?"
+                  value={isArmored3A}
+                  onChange={setIsArmored3A}
+                />
+                <ToggleRow
+                  label="Há delaminações?"
+                  value={hasDelamination}
+                  onChange={setHasDelamination}
+                />
+
+                {hasDelamination && (
+                  <View style={styles.subField}>
+                    <Text style={styles.subLabel}>Quantos vidros delaminados? (R$6.000 cada)</Text>
+                    <OptionGroup
+                      options={DELAMINATED_WINDOW_OPTIONS}
+                      value={delaminatedWindowValue}
+                      onChange={setDelaminatedWindowValue}
+                    />
+                  </View>
+                )}
+
+                {armorPreview && (
+                  <View style={styles.costPreview}>
+                    <Text
+                      style={[
+                        styles.costPreviewText,
+                        armorPreview.total >= 0 ? styles.fieldNotePositive : undefined,
+                      ]}
+                    >
+                      Ajuste da blindagem:{' '}
+                      <Text style={styles.costPreviewValue}>
+                        {armorPreview.total >= 0 ? '+' : ''}R$ {armorPreview.total.toLocaleString('pt-BR')}
+                      </Text>
+                    </Text>
+                  </View>
+                )}
+              </View>
+            )}
+          </Card>
+        )}
 
         <Button label="Calcular avaliação" onPress={handleSubmit} style={styles.submitButton} />
       </ScrollView>

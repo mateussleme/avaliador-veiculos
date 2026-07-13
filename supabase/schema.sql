@@ -42,6 +42,13 @@ CREATE TABLE evaluations (
   adjustment_percent        NUMERIC(5,2) NOT NULL,
   estimated_value           NUMERIC(12,2) NOT NULL,
 
+  -- Blindagem
+  is_armored                BOOLEAN NOT NULL DEFAULT FALSE,
+  is_armored_3a             BOOLEAN NOT NULL DEFAULT FALSE,
+  has_delamination          BOOLEAN NOT NULL DEFAULT FALSE,
+  delaminated_window_count  INT NOT NULL DEFAULT 0 CHECK (delaminated_window_count BETWEEN 0 AND 7),
+  armor_adjustment_value    NUMERIC(12,2) NOT NULL DEFAULT 0,
+
   notes                    TEXT,
   created_at               TIMESTAMPTZ DEFAULT NOW()
 );

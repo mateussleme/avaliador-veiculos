@@ -124,6 +124,29 @@ export function ResultScreen({ kind, vehicle, input, result, plate, sessionToken
           </View>
         )}
 
+        {/* ---- Blindagem (se houver) ---- */}
+        {result.armorAdjustmentValue !== 0 && (
+          <View style={styles.prepCostRow}>
+            <Text
+              style={[
+                styles.prepCostLabel,
+                { color: result.armorAdjustmentValue > 0 ? colors.good : colors.danger },
+              ]}
+            >
+              Ajuste de blindagem
+            </Text>
+            <Text
+              style={[
+                styles.prepCostValue,
+                { color: result.armorAdjustmentValue > 0 ? colors.good : colors.danger },
+              ]}
+            >
+              {result.armorAdjustmentValue > 0 ? '+ ' : '− '}
+              {formatCurrency(Math.abs(result.armorAdjustmentValue))}
+            </Text>
+          </View>
+        )}
+
         {/* ---- Repasse ---- */}
         <View style={styles.repasseCard}>
           <View>
