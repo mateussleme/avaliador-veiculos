@@ -52,6 +52,24 @@ export function EvaluationDetailScreen({ evaluation, onRegisterOutcome }: Evalua
         <Text style={styles.detailLine}>Pneus novos: {evaluation.new_tire_count}</Text>
         <Text style={styles.detailLine}>Revisão na concessionária: {evaluation.had_dealer_service ? 'Sim' : 'Não'}</Text>
         <Text style={styles.detailLine}>Repintura identificada: {evaluation.has_repaint ? 'Sim' : 'Não'}</Text>
+        <Text style={styles.detailLine}>Blindado: {evaluation.is_armored ? 'Sim' : 'Não'}</Text>
+        {evaluation.is_armored && (
+          <>
+            <Text style={styles.detailLine}>Blindagem nível III-A: {evaluation.is_armored_3a ? 'Sim' : 'Não'}</Text>
+            <Text style={styles.detailLine}>
+              Delaminações: {evaluation.has_delamination ? `Sim (${evaluation.delaminated_window_count} vidro(s))` : 'Não'}
+            </Text>
+            <Text
+              style={[
+                styles.detailLine,
+                { color: evaluation.armor_adjustment_value > 0 ? colors.good : evaluation.armor_adjustment_value < 0 ? colors.danger : colors.textPrimary },
+              ]}
+            >
+              Ajuste de blindagem: {evaluation.armor_adjustment_value > 0 ? '+' : evaluation.armor_adjustment_value < 0 ? '− ' : ''}
+              {formatCurrency(Math.abs(evaluation.armor_adjustment_value))}
+            </Text>
+          </>
+        )}
       </Card>
 
       <Card style={styles.card}>

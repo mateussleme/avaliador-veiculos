@@ -418,6 +418,14 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "GWM", model: "Poer P30", discount: 0.2 }, // 20%
   { brand: "GWM", model: "Tank 300", discount: 0.2 }, // 20%
   { brand: "GWM", model: "Wey 07", discount: 0.25 }, // 25%
+
+  // Mini
+  // Confirmado ao vivo na FIPE (marca "MINI", código 156): existe o modelo
+  // exato "COOPER John Works 2.0 Turbo 3p Aut." (código 7357). O match por
+  // palavra completa também cobre as edições especiais que usam a mesma
+  // mecânica ("... GP3 2.0 Turbo 3p Aut.", "... 25K Edit. 2.0 Turbo 3p") —
+  // ambas recebem 22% também, já que são a mesma versão John Works 2.0 Turbo.
+  { brand: "Mini", model: "Cooper John Works 2.0 Turbo 3p", discount: 0.22 }, // 22%
 ];
 
 // ---- Matching tolerante a variações de grafia ----
