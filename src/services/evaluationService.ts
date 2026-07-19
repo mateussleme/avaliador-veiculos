@@ -28,6 +28,7 @@ export async function saveEvaluation(data: SaveEvaluationInput): Promise<string>
       model_year:            data.vehicle.modelYear,
       fuel:                  data.vehicle.fuel,
       fipe_code:             data.vehicle.codeFipe,
+      chassi:                data.vehicle.chassi ?? null,
       fipe_price:            data.vehicle.priceValue,
       fipe_reference_month:  data.vehicle.referenceMonth,
       vehicle_kind:          data.kind,
@@ -45,6 +46,9 @@ export async function saveEvaluation(data: SaveEvaluationInput): Promise<string>
       has_delamination:      data.input.hasDelamination,
       delaminated_window_count: data.input.delaminatedWindowCount,
       armor_adjustment_value:   data.result.armorAdjustmentValue,
+      preparation_cost:      data.result.preparationCost,
+      final_offer_value:     data.result.finalOfferValue,
+      repasse_value:         data.result.repasseValue,
     })
     .select('id')
     .single();

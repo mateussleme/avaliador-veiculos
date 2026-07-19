@@ -50,6 +50,32 @@ export async function fetchModels(kind: VehicleKind, brandCode: string): Promise
   return fipeFetch<FipeModel[]>(`/${kind}/brands/${brandCode}/models`);
 }
 
+// Fluxo alternativo marca → ano → modelo.
+// A FIPE expõe os anos de uma marca inteira (sem precisar do modelo) e os
+// modelos de uma marca+ano. Cada um continua sendo 1 requisição só, então
+// não fica mais lento nem gasta cota extra. O código de ano já vem com o
+// combustível embutido (ex: "2025-5" = 2025 Flex), então escolher o ano
+// aqui já filtra os modelos por ano E combustível.
+export async function fetchYearsByBrand(
+  kind: VehicleKind,
+  brandCode: string
+): Promise<FipeYear[]> {
+  const years = await fipeFetch<FipeYear[]>(`/${kind}/brands/${brandCode}/years`);
+  return years.map((y) =>
+    isZeroKmYearCode(y.code)
+      ? { ...y, name: y.name.replace(ZERO_KM_YEAR_PREFIX, '0 km') }
+      : y
+  );
+}
+
+export async function fetchModelsByYear(
+  kind: VehicleKind,
+  brandCode: string,
+  yearCode: string
+): Promise<FipeModel[]> {
+  return fipeFetch<FipeModel[]>(`/${kind}/brands/${brandCode}/years/${yearCode}/models`);
+}
+
 // A FIPE usa "32000" como ano de convenção interna para veículo 0km (sem
 // ano de modelo definido ainda) — ex: code "32000-5", name "32000 Flex".
 // Mostrar esse número cru pro usuário ("32000 Gasolina") é confuso, então

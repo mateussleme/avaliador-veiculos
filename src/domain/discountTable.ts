@@ -10,6 +10,10 @@ export interface DiscountEntry {
   brand: string;
   model: string;
   discount: number; // ex: 0.20 = 20% de desconto sobre o valor FIPE
+  // Média de km/ano esperada para o modelo (coluna "KM Média Ano" das
+  // planilhas). Usada pelo motor para deixar o ajuste de quilometragem
+  // relativo ao modelo. Se ausente, o motor usa o padrão (12.000 km/ano).
+  kmPerYear?: number;
 }
 
 export const DEFAULT_DISCOUNT_PERCENT = 20;
@@ -53,7 +57,7 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "BMW", model: "X2", discount: 0.2 }, // 20%
   { brand: "BMW", model: "X3", discount: 0.18 }, // 18%
   { brand: "BMW", model: "X4", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "X5", discount: 0.2 }, // 20%
+  { brand: "BMW", model: "X5", discount: 0.25 }, // 25%
   { brand: "BMW", model: "X6", discount: 0.18 }, // 18%
   { brand: "BMW", model: "X7", discount: 0.3 }, // 30%
   { brand: "BMW", model: "Z4", discount: 0.18 }, // 18%
@@ -76,6 +80,7 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Land Rover", model: "Defender", discount: 0.22 }, // 22%
   { brand: "Land Rover", model: "Discovery", discount: 0.25 }, // 25%
   { brand: "Land Rover", model: "Discovery Sport", discount: 0.25 }, // 25%
+  { brand: "Land Rover", model: "Discov Metrop", discount: 0.28 }, // 28% — "Discov. Metrop." (FIPE abrevia)
   { brand: "Land Rover", model: "Range Rover", discount: 0.25 }, // 25%
   { brand: "Land Rover", model: "Range Rover Evoque", discount: 0.25 }, // 25%
   { brand: "Land Rover", model: "Evoque", discount: 0.25 }, // 25%
@@ -83,39 +88,63 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Land Rover", model: "Range Rover Sport", discount: 0.3 }, // 30%
   { brand: "Land Rover", model: "Range Rover Velar", discount: 0.3 }, // 30%
   { brand: "Land Rover", model: "Range Rover Vogue", discount: 0.3 }, // 30%
+  // A FIPE abrevia a maior parte da linha Range Rover como "Range R." —
+  // ex: "Range R. Sport Autob.", "Range R. Sp. Dyn. HSE", "Range R.Sp.
+  // First.Ed", "Range.R. SP.HSE", "Range R. VELAR HSE", "Range R. VEL.
+  // R-Dyn.", "Range R. Vogue", "Range R. Autobio." (o Range Rover "cheio").
+  // Como o normalize() troca pontuação por espaço, esses nomes viram
+  // "range r sport", "range r sp", "range r vel"... — e as entradas acima,
+  // que exigem a palavra "rover", NÃO casam com eles (cairiam no padrão
+  // de 20%). As entradas abaixo cobrem as abreviações; a regra do match
+  // mais específico garante que "Range R Sport" (3 tokens) vence
+  // "Range R" (2 tokens) quando ambas couberem.
+  { brand: "Land Rover", model: "Range R", discount: 0.25 }, // 25% — base, espelho de "Range Rover"
+  { brand: "Land Rover", model: "Range R Sport", discount: 0.3 }, // 30%
+  { brand: "Land Rover", model: "Range R Sp", discount: 0.3 }, // 30% — "Range R. Sp." / "Range.R. SP."
+  { brand: "Land Rover", model: "Range R Vel", discount: 0.3 }, // 30% — "Range R. VEL."
+  { brand: "Land Rover", model: "Range R Velar", discount: 0.3 }, // 30%
+  { brand: "Land Rover", model: "Range R Vogue", discount: 0.3 }, // 30%
 
   // Audi
-  { brand: "Audi", model: "A1", discount: 0.2 }, // 20%
-  { brand: "Audi", model: "A3", discount: 0.2 }, // 20%
-  { brand: "Audi", model: "A4", discount: 0.25 }, // 25%
-  { brand: "Audi", model: "A5", discount: 0.25 }, // 25%
-  { brand: "Audi", model: "A6", discount: 0.3 }, // 30%
-  { brand: "Audi", model: "A6 E-tron", discount: 0.35 }, // 35%
-  { brand: "Audi", model: "A7", discount: 0.35 }, // 35%
-  { brand: "Audi", model: "A8", discount: 0.35 }, // 35%
-  { brand: "Audi", model: "E-tron", discount: 0.35 }, // 35%
-  { brand: "Audi", model: "E-tron Gt", discount: 0.35 }, // 35%
-  { brand: "Audi", model: "Q3", discount: 0.2 }, // 20%
-  { brand: "Audi", model: "Q5", discount: 0.2 }, // 20%
-  { brand: "Audi", model: "Q6 E-tron", discount: 0.35 }, // 35%
-  { brand: "Audi", model: "Q7", discount: 0.3 }, // 30%
-  { brand: "Audi", model: "Q8", discount: 0.3 }, // 30%
-  { brand: "Audi", model: "Q8 E-tron", discount: 0.35 }, // 35%
-  { brand: "Audi", model: "R8", discount: 0.3 }, // 30%
-  { brand: "Audi", model: "Rs E-tron Gt", discount: 0.34 }, // 34%
-  { brand: "Audi", model: "Rs Q3", discount: 0.35 }, // 35%
-  { brand: "Audi", model: "Rs Q8", discount: 0.35 }, // 35%
-  { brand: "Audi", model: "Rs3", discount: 0.3 }, // 30%
-  { brand: "Audi", model: "Rs4", discount: 0.3 }, // 30%
-  { brand: "Audi", model: "Rs5", discount: 0.3 }, // 30%
-  { brand: "Audi", model: "Rs6", discount: 0.33 }, // 33%
-  { brand: "Audi", model: "Rs7", discount: 0.33 }, // 33%
-  { brand: "Audi", model: "Sq5", discount: 0.33 }, // 33%
-  { brand: "Audi", model: "Sq6 E-tron", discount: 0.35 }, // 35%
-  { brand: "Audi", model: "Sq8 E-tron", discount: 0.35 }, // 35%
-  { brand: "Audi", model: "Tt", discount: 0.25 }, // 25%
-  { brand: "Audi", model: "Tt Rs", discount: 0.25 }, // 25%
-  { brand: "Audi", model: "Tts", discount: 0.25 }, // 25%
+  { brand: "Audi", model: "A1", discount: 0.2 }, // 20% (mantido — não veio na planilha nova)
+  // A3: base 20%; a planilha separa por carroceria — Sedan 24% e Sportback
+  // 22%. A FIPE grafa os dois de duas formas ("A3 Sedan"/"A3 Sed." e
+  // "A3 Sportback"/"A3 Sportb."), então há uma entrada para cada grafia.
+  // A entrada base "A3" cobre versões sem carroceria (cabriolet, hatch antigo).
+  { brand: "Audi", model: "A3", discount: 0.2, kmPerYear: 8000 }, // 20% (demais A3)
+  { brand: "Audi", model: "A3 Sedan", discount: 0.24, kmPerYear: 8000 }, // 24%
+  { brand: "Audi", model: "A3 Sed", discount: 0.24, kmPerYear: 8000 }, // 24% (grafia "A3 Sed.")
+  { brand: "Audi", model: "A3 Sportback", discount: 0.22, kmPerYear: 8000 }, // 22%
+  { brand: "Audi", model: "A3 Sportb", discount: 0.22, kmPerYear: 8000 }, // 22% (grafia "A3 Sportb.")
+  { brand: "Audi", model: "A4", discount: 0.28, kmPerYear: 8000 }, // 28%
+  { brand: "Audi", model: "A5", discount: 0.3, kmPerYear: 8000 }, // 30%
+  { brand: "Audi", model: "A6", discount: 0.3, kmPerYear: 8000 }, // 30%
+  { brand: "Audi", model: "A6 E-tron", discount: 0.3, kmPerYear: 8000 }, // 30%
+  { brand: "Audi", model: "A7", discount: 0.3, kmPerYear: 8000 }, // 30%
+  { brand: "Audi", model: "A8", discount: 0.35 }, // 35% (mantido — não veio na planilha)
+  { brand: "Audi", model: "E-tron", discount: 0.3, kmPerYear: 8000 }, // 30%
+  { brand: "Audi", model: "E-tron Gt", discount: 0.3, kmPerYear: 8000 }, // 30%
+  { brand: "Audi", model: "Q3", discount: 0.25, kmPerYear: 8000 }, // 25%
+  { brand: "Audi", model: "Q5", discount: 0.28, kmPerYear: 8000 }, // 28%
+  { brand: "Audi", model: "Q6 E-tron", discount: 0.25, kmPerYear: 8000 }, // 25%
+  { brand: "Audi", model: "Q7", discount: 0.28, kmPerYear: 8000 }, // 28%
+  { brand: "Audi", model: "Q8", discount: 0.28, kmPerYear: 8000 }, // 28%
+  { brand: "Audi", model: "Q8 E-tron", discount: 0.3, kmPerYear: 8000 }, // 30%
+  { brand: "Audi", model: "R8", discount: 0.25, kmPerYear: 3000 }, // 25%
+  { brand: "Audi", model: "Rs E-tron Gt", discount: 0.3, kmPerYear: 8000 }, // 30%
+  { brand: "Audi", model: "Rs Q3", discount: 0.28, kmPerYear: 4000 }, // 28%
+  { brand: "Audi", model: "Rs Q8", discount: 0.28, kmPerYear: 4000 }, // 28%
+  { brand: "Audi", model: "Rs3", discount: 0.3 }, // 30% (mantido — não veio na planilha)
+  { brand: "Audi", model: "Rs4", discount: 0.3, kmPerYear: 4000 }, // 30%
+  { brand: "Audi", model: "Rs5", discount: 0.25, kmPerYear: 3000 }, // 25%
+  { brand: "Audi", model: "Rs6", discount: 0.25, kmPerYear: 3000 }, // 25%
+  { brand: "Audi", model: "Rs7", discount: 0.25, kmPerYear: 3000 }, // 25%
+  { brand: "Audi", model: "Sq5", discount: 0.25, kmPerYear: 3000 }, // 25%
+  { brand: "Audi", model: "Sq6 E-tron", discount: 0.35 }, // 35% (mantido — não veio na planilha)
+  { brand: "Audi", model: "Sq8 E-tron", discount: 0.3, kmPerYear: 8000 }, // 30%
+  { brand: "Audi", model: "Tt", discount: 0.25 }, // 25% (mantido)
+  { brand: "Audi", model: "Tt Rs", discount: 0.25, kmPerYear: 4000 }, // 25%
+  { brand: "Audi", model: "Tts", discount: 0.25 }, // 25% (mantido)
 
   // Mercedez-Benz
   { brand: "Mercedez-Benz", model: "A 200", discount: 0.2 }, // 20%
@@ -206,6 +235,17 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Volvo", model: "Xc40", discount: 0.25 }, // 25%
   { brand: "Volvo", model: "Xc60", discount: 0.25 }, // 25%
   { brand: "Volvo", model: "Xc90", discount: 0.3 }, // 30%
+  // A FIPE grafa a linha XC com espaço ("XC 60 T-8...", "XC 40 T-5...",
+  // "XC 90 T-8..."), então as entradas sem espaço acima não casavam com
+  // nenhum modelo real — tudo caía no padrão de 20%. As entradas abaixo
+  // cobrem a grafia real; as sem espaço ficam por segurança.
+  { brand: "Volvo", model: "Xc 40", discount: 0.25 }, // 25%
+  { brand: "Volvo", model: "Xc 60", discount: 0.25 }, // 25%
+  { brand: "Volvo", model: "Xc 90", discount: 0.3 }, // 30%
+  // Confirmado ao vivo na FIPE (código 9937): "XC 60 T-8 Pol. Eng. 2.0 AWD
+  // (Híbrido)" — o trim Polestar Engineered pedido pelo cliente. 6 tokens,
+  // vence "Xc 60" (2 tokens) pela regra do match mais específico.
+  { brand: "Volvo", model: "Xc 60 T-8 Pol Eng", discount: 0.3 }, // 30%
 
   // Toyota
   { brand: "Toyota", model: "Camry", discount: 0.3 }, // 30%
@@ -426,6 +466,22 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   // mecânica ("... GP3 2.0 Turbo 3p Aut.", "... 25K Edit. 2.0 Turbo 3p") —
   // ambas recebem 22% também, já que são a mesma versão John Works 2.0 Turbo.
   { brand: "Mini", model: "Cooper John Works 2.0 Turbo 3p", discount: 0.22 }, // 22%
+
+  // Jeep
+  // Confirmado ao vivo na FIPE (marca "Jeep", código 29): todos os trims de
+  // Compass começam com "COMPASS " (ex: "COMPASS LIMITED...", "COMPASS
+  // SPORT...", "COMPASS S 1.3 TB 4XE Aut. (Híbrido)"), então um único token
+  // "compass" cobre todas as versões, sem exceção pedida pelo usuário.
+  { brand: "Jeep", model: "Compass", discount: 0.25 }, // 25%
+
+  // Yamaha (motos)
+  // Confirmado ao vivo na FIPE (marca "YAMAHA", código 101): a linha R1 tem
+  // duas versões com nomes de modelo distintos — "YZF R-1 1000" (código 3109)
+  // e "YZF R-1M 1000", a variante M (código 7681). Precisam de duas entradas
+  // porque os tokens "1" e "1m" são palavras diferentes no match; sem a
+  // segunda entrada a R-1M cairia no desconto padrão (20%) por engano.
+  { brand: "Yamaha", model: "Yzf R-1 1000", discount: 0.3 }, // 30%
+  { brand: "Yamaha", model: "Yzf R-1m 1000", discount: 0.3 }, // 30%
 ];
 
 // ---- Matching tolerante a variações de grafia ----
@@ -491,6 +547,7 @@ export interface DiscountLookupResult {
   source: 'table' | 'default';
   matchedBrand?: string;
   matchedModel?: string;
+  kmPerYear?: number; // média de km/ano do modelo (undefined = usar padrão)
 }
 
 /**
@@ -508,7 +565,7 @@ export function lookupDiscount(brand: string, model: string): DiscountLookupResu
     (e) => normBrand(e.brand) === nb && normalize(e.model) === nm
   );
   if (exact) {
-    return { discount: exact.discount, discountPercent: Math.round(exact.discount * 100), source: 'table', matchedBrand: exact.brand, matchedModel: exact.model };
+    return { discount: exact.discount, discountPercent: Math.round(exact.discount * 100), source: 'table', matchedBrand: exact.brand, matchedModel: exact.model, kmPerYear: exact.kmPerYear };
   }
 
   // 2. Match parcial por palavra: divide em tokens e verifica se todos os
@@ -536,7 +593,7 @@ export function lookupDiscount(brand: string, model: string): DiscountLookupResu
       )
     : undefined;
   if (partial) {
-    return { discount: partial.discount, discountPercent: Math.round(partial.discount * 100), source: 'table', matchedBrand: partial.brand, matchedModel: partial.model };
+    return { discount: partial.discount, discountPercent: Math.round(partial.discount * 100), source: 'table', matchedBrand: partial.brand, matchedModel: partial.model, kmPerYear: partial.kmPerYear };
   }
 
   return {

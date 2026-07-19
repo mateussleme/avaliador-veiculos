@@ -197,7 +197,7 @@ export function ResultScreen({ kind, vehicle, input, result, plate, sessionToken
 
       {saved ? (
         <Card style={styles.savedCard}>
-          <Text style={styles.savedText}>✓ Avaliação salva no histórico</Text>
+          <Text style={styles.savedText}>Avaliação salva no histórico</Text>
         </Card>
       ) : (
         <Button

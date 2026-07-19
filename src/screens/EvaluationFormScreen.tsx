@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { evaluateVehicle, previewArmorAdjustment, previewMileageAdjustment } from '../domain/evaluationEngine';
+import { lookupDiscount } from '../domain/discountTable';
 import {
   EvaluationInput,
   EvaluationResult,
@@ -97,8 +98,11 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
   const mileagePreview = useMemo(() => {
     const mileage = clampInput(Number(mileageText.replace(/\D/g, '')), MAX_MILEAGE_KM);
     if (!mileage || mileage <= 0) return null;
-    return previewMileageAdjustment(mileage, vehicle.modelYear);
-  }, [mileageText, vehicle.modelYear]);
+    // Usa a média de km/ano do modelo (mesma da tabela de descontos) para
+    // deixar o preview igual ao cálculo final.
+    const media = lookupDiscount(vehicle.brand, vehicle.model).kmPerYear;
+    return previewMileageAdjustment(mileage, vehicle.modelYear, media);
+  }, [mileageText, vehicle.modelYear, vehicle.brand, vehicle.model]);
 
   const delaminatedWindowCount = hasDelamination ? Number(delaminatedWindowValue) : 0;
 
@@ -161,14 +165,14 @@ export function EvaluationFormScreen({ kind, vehicle, onResult }: EvaluationForm
           {mileagePreview ? (
             mileagePreview.isCurrentYear ? (
               <Text style={styles.fieldNote}>
-                Referência para este período: {mileagePreview.expectedKm.toLocaleString('pt-BR')} km →{' '}
+                Referência para este período: {mileagePreview.expectedKm.toLocaleString('pt-BR')} km ·{' '}
                 <Text style={mileagePreview.percent >= 0 ? styles.fieldNotePositive : styles.fieldNoteNegative}>
                   {mileagePreview.percent > 0 ? '+' : ''}{mileagePreview.percent}%
                 </Text>
               </Text>
             ) : (
               <Text style={styles.fieldNote}>
-                ≈ {Math.round(mileagePreview.kmPerYear).toLocaleString('pt-BR')} km/ano →{' '}
+                Cerca de {Math.round(mileagePreview.kmPerYear).toLocaleString('pt-BR')} km/ano ·{' '}
                 <Text style={mileagePreview.percent >= 0 ? styles.fieldNotePositive : styles.fieldNoteNegative}>
                   {mileagePreview.percent > 0 ? '+' : ''}{mileagePreview.percent}%
                 </Text>

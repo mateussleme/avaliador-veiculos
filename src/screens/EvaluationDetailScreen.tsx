@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
+import { CopyableField } from '../components/CopyableField';
 import { EvaluationWithOutcome } from '../types/database';
 import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 
@@ -25,14 +26,13 @@ export function EvaluationDetailScreen({ evaluation, onRegisterOutcome }: Evalua
     <ScrollView contentContainerStyle={styles.scroll}>
       <Text style={styles.vehicleName}>{evaluation.brand} {evaluation.model}</Text>
       <Text style={styles.vehicleMeta}>
-        {evaluation.model_year} · {evaluation.fuel} · {evaluation.mileage_km.toLocaleString('pt-BR')} km
-        {evaluation.plate ? ` · ${evaluation.plate}` : ''}
+        {evaluation.model_year} · {evaluation.fuel}
       </Text>
       <Text style={styles.dateText}>Avaliado em {formatDate(evaluation.created_at)}</Text>
 
       <Card style={styles.heroCard}>
-        <SectionLabel>Valor estimado</SectionLabel>
-        <Text style={styles.estimatedValue}>{formatCurrency(evaluation.estimated_value)}</Text>
+        <SectionLabel>Oferta de compra</SectionLabel>
+        <Text style={styles.estimatedValue}>{formatCurrency(evaluation.final_offer_value)}</Text>
         <View style={styles.compareRow}>
           <View>
             <Text style={styles.compareLabel}>Tabela FIPE</Text>
@@ -45,6 +45,26 @@ export function EvaluationDetailScreen({ evaluation, onRegisterOutcome }: Evalua
             </Text>
           </View>
         </View>
+        {evaluation.repasse_value > 0 && (
+          <View style={styles.repasseRow}>
+            <Text style={styles.repasseLabel}>Valor para repasse (92%)</Text>
+            <Text style={styles.repasseValue}>{formatCurrency(evaluation.repasse_value)}</Text>
+          </View>
+        )}
+      </Card>
+
+      <Card style={styles.card}>
+        <SectionLabel>Dados do veículo</SectionLabel>
+        {evaluation.plate ? (
+          <CopyableField label="Placa" value={evaluation.plate} />
+        ) : null}
+        {evaluation.chassi ? (
+          <CopyableField label="Chassi" value={evaluation.chassi} />
+        ) : null}
+        <CopyableField label="KM" value={`${evaluation.mileage_km.toLocaleString('pt-BR')} km`} copyable={false} />
+        {evaluation.fipe_code ? (
+          <CopyableField label="Código FIPE" value={evaluation.fipe_code} />
+        ) : null}
       </Card>
 
       <Card style={styles.card}>
@@ -116,6 +136,17 @@ const styles = StyleSheet.create({
   compareRight: { alignItems: 'flex-end' },
   compareLabel: { fontSize: type.caption.fontSize, color: colors.textTertiary, marginBottom: 2, fontFamily: fontFamily.inter },
   compareValue: { fontSize: type.h2.fontSize, fontWeight: type.h2.fontWeight, color: colors.textPrimary, fontFamily: fontFamily.spaceGrotesk },
+  repasseRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.infoBg,
+    borderRadius: radius.md,
+  },
+  repasseLabel: { fontSize: type.caption.fontSize, color: colors.info, fontFamily: fontFamily.inter },
+  repasseValue: { fontSize: type.h2.fontSize, fontWeight: '700', color: colors.info, fontFamily: fontFamily.spaceGrotesk },
   card: { marginBottom: spacing.md },
   detailLine: { fontSize: type.body.fontSize, color: colors.textPrimary, marginBottom: spacing.xs, fontFamily: fontFamily.inter },
   outcomeButton: { marginTop: spacing.sm },

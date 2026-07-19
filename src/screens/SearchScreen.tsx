@@ -1,13 +1,24 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { fetchBrands, fetchModels, fetchVehicleInfo, fetchYears, FipeApiError, formatModelYear } from '../api/fipeApi';
+import {
+  fetchBrands,
+  fetchModels,
+  fetchModelsByYear,
+  fetchVehicleInfo,
+  fetchYears,
+  fetchYearsByBrand,
+  FipeApiError,
+  formatModelYear,
+} from '../api/fipeApi';
 import { fetchVehicleByPlate, FipeVersionMatch, PlateApiError, PlateLookupResult } from '../api/plateApi';
 import { filterCuratedBrands } from '../domain/brandFilters';
 import { formatPlateHint, parsePlate } from '../domain/plateValidation';
 import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
+import { CopyableField } from '../components/CopyableField';
 import { OptionGroup } from '../components/OptionGroup';
 import { SelectField, SelectOption } from '../components/SelectField';
+import { YearFuelSelect } from '../components/YearFuelSelect';
 import { useBottomPadding } from '../hooks/useBottomPadding';
 import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 import { FipeVehicleInfo, VehicleKind } from '../domain/types';
@@ -34,10 +45,14 @@ const KIND_LABEL: Record<VehicleKind, string> = {
   motorcycles: 'Moto',
 };
 
+
 export function SearchScreen({ onContinue }: SearchScreenProps) {
   const [mode, setMode] = useState<SearchMode>('manual');
 
   // ---- Busca manual (marca / modelo / ano) ----
+  // Modelo e Ano são independentes: depois de escolher a marca, os dois
+  // campos ficam habilitados. Escolher um filtra o outro pela FIPE (o
+  // modelo escolhido limita os anos; o ano escolhido limita os modelos).
   const [kind, setKind] = useState<VehicleKind>('cars');
 
   const [rawBrands, setRawBrands] = useState<SelectOption[]>([]);
@@ -88,45 +103,65 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
     return filtered.length > 0 ? filtered : rawBrands;
   }, [rawBrands, showAllBrands, kind]);
 
-  // Recarrega modelos sempre que a marca muda.
+  // Ao trocar a marca, zera modelo/ano e o preço. As listas são recarregadas
+  // pelos dois efeitos abaixo (que dependem de brand).
   useEffect(() => {
     setModel(null);
     setYear(null);
     setManualVehicleInfo(null);
-    setYears([]);
+  }, [brand]);
 
+  // ---- Lista de MODELOS ----
+  // Sem ano escolhido: todos os modelos da marca.
+  // Com ano escolhido: só os modelos daquele ano+combustível.
+  // Se o modelo já selecionado sair da lista filtrada, ele é limpo.
+  useEffect(() => {
     if (!brand) {
       setModels([]);
       return;
     }
-
     setManualError(null);
     setLoadingModels(true);
-    fetchModels(kind, brand.code)
-      .then(setModels)
+
+    const request = year
+      ? fetchModelsByYear(kind, brand.code, year.code)
+      : fetchModels(kind, brand.code);
+
+    request
+      .then((list) => {
+        setModels(list);
+        setModel((cur) => (cur && !list.some((m) => m.code === cur.code) ? null : cur));
+      })
       .catch((e) => setManualError(e instanceof FipeApiError ? e.message : 'Erro ao carregar modelos.'))
       .finally(() => setLoadingModels(false));
-  }, [brand, kind]);
+  }, [brand, kind, year]);
 
-  // Recarrega anos sempre que o modelo muda.
+  // ---- Lista de ANOS ----
+  // Sem modelo escolhido: todos os anos da marca.
+  // Com modelo escolhido: só os anos daquele modelo.
+  // Se o ano já selecionado sair da lista filtrada, ele é limpo.
   useEffect(() => {
-    setYear(null);
-    setManualVehicleInfo(null);
-
-    if (!brand || !model) {
+    if (!brand) {
       setYears([]);
       return;
     }
-
     setManualError(null);
     setLoadingYears(true);
-    fetchYears(kind, brand.code, model.code)
-      .then(setYears)
+
+    const request = model
+      ? fetchYears(kind, brand.code, model.code)
+      : fetchYearsByBrand(kind, brand.code);
+
+    request
+      .then((list) => {
+        setYears(list);
+        setYear((cur) => (cur && !list.some((y) => y.code === cur.code) ? null : cur));
+      })
       .catch((e) => setManualError(e instanceof FipeApiError ? e.message : 'Erro ao carregar anos.'))
       .finally(() => setLoadingYears(false));
-  }, [model, brand, kind]);
+  }, [brand, kind, model]);
 
-  // Busca o preço FIPE sempre que o ano é escolhido.
+  // Busca o preço FIPE quando marca + modelo + ano estão escolhidos.
   useEffect(() => {
     setManualVehicleInfo(null);
 
@@ -185,6 +220,7 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
             options={brands}
             value={brand}
             onSelect={setBrand}
+            onClear={() => setBrand(null)}
             loading={loadingBrands}
           />
 
@@ -200,17 +236,19 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
             options={models}
             value={model}
             onSelect={setModel}
+            onClear={() => setModel(null)}
             disabled={!brand}
             loading={loadingModels}
           />
 
-          <SelectField
+          <YearFuelSelect
             label="Ano / combustível"
-            placeholder={model ? 'Selecione o ano' : 'Selecione o modelo primeiro'}
+            placeholder={brand ? 'Selecione o combustível' : 'Selecione a marca primeiro'}
             options={years}
             value={year}
             onSelect={setYear}
-            disabled={!model}
+            onClear={() => setYear(null)}
+            disabled={!brand}
             loading={loadingYears}
           />
 
@@ -284,6 +322,19 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
                 {plateResult.vehicle.fuel} · ref. {plateResult.vehicle.referenceMonth}
               </Text>
               <Text style={styles.priceValue}>{plateResult.vehicle.priceLabel}</Text>
+
+              <View style={styles.vehicleDocsWrap}>
+                {plateResult.vehicle.codeFipe ? (
+                  <CopyableField label="Código FIPE" value={plateResult.vehicle.codeFipe} />
+                ) : null}
+                {plateResult.vehicle.chassi ? (
+                  <CopyableField label="Chassi" value={plateResult.vehicle.chassi} />
+                ) : null}
+                {plateResult.vehicle.renavam ? (
+                  <CopyableField label="Renavam" value={plateResult.vehicle.renavam} />
+                ) : null}
+              </View>
+
               {plateResult.allMatches.length > 1 ? (
                 <Text style={styles.fieldNote}>
                   {plateResult.allMatches.length} versões FIPE encontradas — você vai selecionar a correta na próxima tela.
@@ -339,6 +390,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     lineHeight: 16,
     fontFamily: fontFamily.inter,
+  },
+  vehicleDocsWrap: {
+    marginTop: spacing.sm,
   },
   searchButton: {
     marginTop: spacing.md,

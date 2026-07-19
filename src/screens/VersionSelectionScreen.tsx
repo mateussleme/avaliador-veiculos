@@ -36,7 +36,7 @@ export function VersionSelectionScreen({
     <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
       <Card style={styles.alertCard}>
-        <Text style={styles.alertTitle}>⚠️ Confirme a versão antes de avaliar</Text>
+        <Text style={styles.alertTitle}> Confirme a versão antes de avaliar</Text>
         <Text style={styles.alertBody}>
           A base da SENATRAN registra o modelo genérico do veículo, mas a tabela FIPE
           diferencia versões comerciais com preços distintos. Uma versão errada pode distorcer

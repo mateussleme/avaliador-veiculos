@@ -51,7 +51,7 @@ export function OutcomeScreen({ evaluation, onSaved }: OutcomeScreenProps) {
     evaluation.was_purchased === false ? 'no' : 'yes'
   );
   const [purchasePriceText, setPurchasePriceText] = useState(
-    evaluation.purchase_price ? String(evaluation.purchase_price) : String(Math.round(evaluation.estimated_value))
+    evaluation.purchase_price ? String(evaluation.purchase_price) : String(Math.round(evaluation.final_offer_value))
   );
   const [purchaseDate] = useState(evaluation.purchase_date ?? todayISO());
 
@@ -91,7 +91,7 @@ export function OutcomeScreen({ evaluation, onSaved }: OutcomeScreenProps) {
           <SectionLabel>Veículo avaliado</SectionLabel>
           <Text style={styles.vehicleName}>{evaluation.brand} {evaluation.model}</Text>
           <Text style={styles.vehicleMeta}>
-            {evaluation.model_year} · valor estimado {formatCurrency(evaluation.estimated_value)}
+            {evaluation.model_year} · oferta de compra {formatCurrency(evaluation.final_offer_value)}
           </Text>
         </Card>
 

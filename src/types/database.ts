@@ -16,6 +16,7 @@ export interface Evaluation {
   model_year: number;
   fuel: string | null;
   fipe_code: string | null;
+  chassi: string | null; // só vem preenchido em avaliações feitas via busca por placa
   fipe_price: number;
   fipe_reference_month: string | null;
   vehicle_kind: 'cars' | 'motorcycles';
@@ -33,6 +34,9 @@ export interface Evaluation {
   has_delamination: boolean;
   delaminated_window_count: number;
   armor_adjustment_value: number;
+  preparation_cost: number;
+  final_offer_value: number;
+  repasse_value: number;
   notes: string | null;
   created_at: string;
 }

@@ -25,6 +25,7 @@ CREATE TABLE evaluations (
   model_year               INT  NOT NULL,
   fuel                     TEXT,
   fipe_code                TEXT,
+  chassi                   TEXT, -- só preenchido em avaliações via busca por placa
   fipe_price               NUMERIC(12,2) NOT NULL,
   fipe_reference_month     TEXT,
   vehicle_kind             TEXT NOT NULL CHECK (vehicle_kind IN ('cars', 'motorcycles')),
@@ -48,6 +49,12 @@ CREATE TABLE evaluations (
   has_delamination          BOOLEAN NOT NULL DEFAULT FALSE,
   delaminated_window_count  INT NOT NULL DEFAULT 0 CHECK (delaminated_window_count BETWEEN 0 AND 7),
   armor_adjustment_value    NUMERIC(12,2) NOT NULL DEFAULT 0,
+
+  -- Valor final (o que de fato foi ofertado — inclui custo de preparação e
+  -- blindagem, diferente de estimated_value que é só o ajuste percentual)
+  preparation_cost          NUMERIC(12,2) NOT NULL DEFAULT 0,
+  final_offer_value         NUMERIC(12,2) NOT NULL DEFAULT 0,
+  repasse_value             NUMERIC(12,2) NOT NULL DEFAULT 0,
 
   notes                    TEXT,
   created_at               TIMESTAMPTZ DEFAULT NOW()

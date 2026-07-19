@@ -33,6 +33,11 @@ export interface FipeVehicleInfo {
   // modelYear para o ano atual (mantém os cálculos de depreciação corretos)
   // e marcamos isZeroKm para a tela exibir "0 km" em vez do número cru.
   isZeroKm?: boolean;
+  // Preenchidos apenas na busca por placa (a APIBrasil retorna, a busca
+  // manual pela FIPE pública não tem esse dado). Ficam undefined quando
+  // não disponíveis — telas devem tratar como opcionais.
+  chassi?: string;
+  renavam?: string;
 }
 
 // ---- Métricas de avaliação informadas pelo usuário ----

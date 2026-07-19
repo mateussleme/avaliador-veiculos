@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -7,6 +7,7 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { deleteEvaluation, fetchEvaluations } from '../services/evaluationService';
@@ -45,6 +46,7 @@ export function HistoryScreen({ onSelectEvaluation, refreshTrigger }: HistoryScr
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const load = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
@@ -68,6 +70,20 @@ export function HistoryScreen({ onSelectEvaluation, refreshTrigger }: HistoryScr
   }, []);
 
   useEffect(() => { load(); }, [load, refreshTrigger]);
+
+  // Busca local (sem nova consulta ao banco) por placa, marca ou modelo —
+  // a lista já vem inteira do fetchEvaluations(100), então filtrar em
+  // memória é suficiente e evita ida e volta ao Supabase a cada letra digitada.
+  const filteredEvaluations = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return evaluations;
+    return evaluations.filter((item) => {
+      const plate = (item.plate ?? '').toLowerCase();
+      const brand = item.brand.toLowerCase();
+      const model = item.model.toLowerCase();
+      return plate.includes(query) || brand.includes(query) || model.includes(query);
+    });
+  }, [evaluations, searchQuery]);
 
   async function handleDelete(id: string) {
     const previous = evaluations;
@@ -124,47 +140,101 @@ export function HistoryScreen({ onSelectEvaluation, refreshTrigger }: HistoryScr
   }
 
   return (
-    <FlatList
-      data={evaluations}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.list}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={colors.ink} />}
-      renderItem={({ item }) => (
-        <Pressable
-          onPress={() => onSelectEvaluation(item)}
-          onLongPress={() => confirmDelete(item)}
-          delayLongPress={450}
-          style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-        >
-          <View style={styles.cardHeader}>
-            <View style={styles.cardTitleWrap}>
-              <Text style={styles.cardVehicle} numberOfLines={1}>{item.brand} {item.model}</Text>
-              <Text style={styles.cardMeta}>
-                {item.model_year} · {item.mileage_km.toLocaleString('pt-BR')} km{item.plate ? ` · ${item.plate}` : ''}
-              </Text>
-            </View>
-            <View style={styles.cardPriceWrap}>
-              <Text style={styles.cardPrice}>{formatCurrency(item.estimated_value)}</Text>
-              <Text style={styles.cardDate}>{formatDate(item.created_at)}</Text>
-            </View>
-          </View>
+    <View style={styles.flex}>
+      <View style={styles.searchWrap}>
+        <TextInput
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Buscar por placa, marca ou modelo"
+          placeholderTextColor={colors.textTertiary}
+          autoCapitalize="characters"
+          style={styles.searchInput}
+        />
+        {searchQuery.length > 0 && (
+          <Pressable onPress={() => setSearchQuery('')} style={styles.searchClear} hitSlop={8}>
+            <Text style={styles.searchClearText}>×</Text>
+          </Pressable>
+        )}
+      </View>
 
-          <View style={styles.cardFooter}>
-            <OutcomeBadge evaluation={item} />
-            {item.was_purchased && item.purchase_price ? (
-              <Text style={styles.cardPurchasePrice}>Comprado por {formatCurrency(item.purchase_price)}</Text>
-            ) : null}
-            {item.was_sold && item.sale_price ? (
-              <Text style={styles.cardSalePrice}>Vendido por {formatCurrency(item.sale_price)}</Text>
-            ) : null}
+      <FlatList
+        data={filteredEvaluations}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={colors.ink} />}
+        ListEmptyComponent={
+          <View style={styles.searchEmpty}>
+            <Text style={styles.searchEmptyText}>Nenhuma avaliação encontrada para "{searchQuery}".</Text>
           </View>
-        </Pressable>
-      )}
-    />
+        }
+        renderItem={({ item }) => (
+          <Pressable
+            onPress={() => onSelectEvaluation(item)}
+            onLongPress={() => confirmDelete(item)}
+            delayLongPress={450}
+            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+          >
+            <View style={styles.cardHeader}>
+              <View style={styles.cardTitleWrap}>
+                <Text style={styles.cardVehicle} numberOfLines={1}>{item.brand} {item.model}</Text>
+                <Text style={styles.cardMeta}>
+                  {item.model_year} · {item.mileage_km.toLocaleString('pt-BR')} km{item.plate ? ` · ${item.plate}` : ''}
+                </Text>
+              </View>
+              <View style={styles.cardPriceWrap}>
+                <Text style={styles.cardPrice}>{formatCurrency(item.final_offer_value)}</Text>
+                <Text style={styles.cardDate}>{formatDate(item.created_at)}</Text>
+              </View>
+            </View>
+
+            <View style={styles.cardFooter}>
+              <OutcomeBadge evaluation={item} />
+              {item.was_purchased && item.purchase_price ? (
+                <Text style={styles.cardPurchasePrice}>Comprado por {formatCurrency(item.purchase_price)}</Text>
+              ) : null}
+              {item.was_sold && item.sale_price ? (
+                <Text style={styles.cardSalePrice}>Vendido por {formatCurrency(item.sale_price)}</Text>
+              ) : null}
+            </View>
+          </Pressable>
+        )}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: { flex: 1 },
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: type.body.fontSize,
+    color: colors.textPrimary,
+    paddingVertical: spacing.sm + 2,
+    fontFamily: fontFamily.inter,
+  },
+  searchClear: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  searchClearText: {
+    fontSize: 20,
+    lineHeight: 20,
+    color: colors.textTertiary,
+    fontFamily: fontFamily.inter,
+  },
+  searchEmpty: { alignItems: 'center', paddingTop: spacing.xxl, paddingHorizontal: spacing.xl },
+  searchEmptyText: { fontSize: type.body.fontSize, color: colors.textSecondary, textAlign: 'center', fontFamily: fontFamily.inter },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, backgroundColor: colors.background },
    loadingText: { marginTop: spacing.md, color: colors.textSecondary, fontSize: type.body.fontSize, fontFamily: fontFamily.inter },
   errorText: { color: colors.danger, textAlign: 'center', marginBottom: spacing.md },

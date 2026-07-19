@@ -57,6 +57,17 @@ function clamp(v: number, min: number, max: number) {
 // Referência de km esperados para veículos do ano atual
 const CURRENT_YEAR_KM_PER_YEAR = 5000; // base anual para cálculo proporcional ao mês
 
+// Média de km/ano padrão (usada quando o modelo não tem "KM Média Ano" na
+// tabela). Todas as faixas de km e a referência exibida são calibradas para
+// esse valor; para modelos com média diferente, tudo é escalonado pelo fator
+// (média do modelo ÷ 12.000), deixando o ajuste relativo ao modelo sem mudar
+// o comportamento de quem usa o padrão.
+const DEFAULT_KM_PER_YEAR = 12000;
+
+function kmFactor(mediaKmPerYear: number): number {
+  return mediaKmPerYear / DEFAULT_KM_PER_YEAR;
+}
+
 function vehicleAgeYears(modelYear: number): number {
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -72,44 +83,56 @@ function vehicleAgeYears(modelYear: number): number {
   return Math.max(currentYear - modelYear, MIN_AGE_YEARS);
 }
 
-// Calcula a km esperada para o período de uso do veículo.
-// Para ano atual: 5.000 km ÷ 12 × meses decorridos.
-// Para anos anteriores: 12.000 km × anos de uso.
-function expectedKmForAge(modelYear: number): number {
+// Calcula a km esperada para o período de uso do veículo, já ajustada pela
+// média do modelo (fator = média ÷ 12.000; padrão = 1, sem mudança).
+// Para ano atual: (5.000 km ÷ 12 × meses) × fator.
+// Para anos anteriores: 12.000 km × anos × fator = média × anos.
+function expectedKmForAge(modelYear: number, mediaKmPerYear: number): number {
+  const factor = kmFactor(mediaKmPerYear);
   const now = new Date();
   const currentYear = now.getFullYear();
   if (modelYear >= currentYear) {
     const monthsElapsed = Math.max(now.getMonth() + 1, 1);
-    return Math.round((CURRENT_YEAR_KM_PER_YEAR / 12) * monthsElapsed);
+    return Math.round((CURRENT_YEAR_KM_PER_YEAR / 12) * monthsElapsed * factor);
   }
-  return Math.max(currentYear - modelYear, MIN_AGE_YEARS) * 12000;
+  return Math.round(Math.max(currentYear - modelYear, MIN_AGE_YEARS) * DEFAULT_KM_PER_YEAR * factor);
 }
 
-function mileageTierPercent(kmPerYear: number): number {
-  return MILEAGE_PER_YEAR_TIERS.find((t) => kmPerYear <= t.upTo)?.percent
+// As faixas de km/ano são escalonadas pela média do modelo: os limites são
+// multiplicados por (média ÷ 12.000). Assim o ajuste vira relativo — quem
+// tem média 8.000 recebe as mesmas proporções que um modelo de 12.000 teria,
+// só que em torno da sua própria média.
+function mileageTierPercent(kmPerYear: number, mediaKmPerYear: number): number {
+  const factor = kmFactor(mediaKmPerYear);
+  return MILEAGE_PER_YEAR_TIERS.find((t) => kmPerYear <= t.upTo * factor)?.percent
     ?? MILEAGE_ABOVE_MAX_PERCENT;
 }
 
 export function previewMileageAdjustment(
   currentMileageKm: number,
-  modelYear: number
+  modelYear: number,
+  mediaKmPerYear: number = DEFAULT_KM_PER_YEAR
 ): { kmPerYear: number; percent: number; expectedKm: number; isCurrentYear: boolean } {
   const age = vehicleAgeYears(modelYear);
   const kmPerYear = currentMileageKm / age;
-  const expectedKm = expectedKmForAge(modelYear);
+  const expectedKm = expectedKmForAge(modelYear, mediaKmPerYear);
   const isCurrentYear = modelYear >= new Date().getFullYear();
-  return { kmPerYear, percent: mileageTierPercent(kmPerYear), expectedKm, isCurrentYear };
+  return { kmPerYear, percent: mileageTierPercent(kmPerYear, mediaKmPerYear), expectedKm, isCurrentYear };
 }
 
-function buildMileageLine(currentMileageKm: number, modelYear: number): AdjustmentLine {
+function buildMileageLine(
+  currentMileageKm: number,
+  modelYear: number,
+  mediaKmPerYear: number
+): AdjustmentLine {
   const now = new Date();
   const currentYear = now.getFullYear();
   const isCurrentYear = modelYear >= currentYear;
 
   const age = vehicleAgeYears(modelYear);
   const kmPerYear = currentMileageKm / age;
-  const percent = mileageTierPercent(kmPerYear);
-  const expectedKm = expectedKmForAge(modelYear);
+  const percent = mileageTierPercent(kmPerYear, mediaKmPerYear);
+  const expectedKm = expectedKmForAge(modelYear, mediaKmPerYear);
 
   let label: string;
   let detail: string;
@@ -118,8 +141,7 @@ function buildMileageLine(currentMileageKm: number, modelYear: number): Adjustme
     const month = now.getMonth() + 1;
     label = `${currentMileageKm.toLocaleString('pt-BR')} km em ${month} meses`;
     detail =
-      `Referência para ${month} meses: ${expectedKm.toLocaleString('pt-BR')} km ` +
-      `(5.000 km ÷ 12 × ${month}). ` +
+      `Referência para ${month} meses: ${expectedKm.toLocaleString('pt-BR')} km. ` +
       `Equivalente a ${Math.round(kmPerYear).toLocaleString('pt-BR')} km/ano.`;
   } else {
     const ageYearsDisplay = Math.round(age);
@@ -328,9 +350,12 @@ export function evaluateVehicle(input: EvaluationInput): EvaluationResult {
   );
   const standardValue = input.vehicle.priceValue * (1 - discountLookup.discount);
 
+  // Média de km/ano do modelo (da tabela) ou padrão de 12.000.
+  const mediaKmPerYear = discountLookup.kmPerYear ?? DEFAULT_KM_PER_YEAR;
+
   // 2. Ajustes percentuais
   const percentLines: AdjustmentLine[] = [
-    buildMileageLine(input.currentMileageKm, input.vehicle.modelYear),
+    buildMileageLine(input.currentMileageKm, input.vehicle.modelYear, mediaKmPerYear),
     buildTireLine(input.kind, input.hasTires, input.newTireCount),
     buildDealerServiceLine(input.hadDealerService),
     buildRepaintLine(input.hasRepaint),
