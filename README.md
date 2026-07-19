@@ -1,187 +1,92 @@
 # AutoValor
 
-Plataforma de inteligência para compra de veículos seminovos. O avaliador informa a placa ou seleciona o veículo manualmente, preenche as condições (km, pneus, revisão, repintura) e recebe um valor de oferta de compra e um valor de repasse — ambos com breakdown detalhado de cada fator aplicado.
+AutoValor é um aplicativo desenvolvido como Trabalho de Conclusão de Curso (TCC) com o objetivo de auxiliar na avaliação de veículos seminovos. A aplicação utiliza informações da Tabela FIPE e parâmetros definidos para estimar o valor de compra e o valor de repasse de um veículo, considerando fatores como quilometragem, estado dos pneus, histórico de revisões e repintura.
 
----
+## Funcionalidades
 
-## Padrão de avaliação
+- Consulta de veículos por placa ou seleção manual.
+- Integração com a Tabela FIPE.
+- Cálculo automático do valor de compra.
+- Estimativa do valor de repasse.
+- Histórico de avaliações.
+- Autenticação de usuários.
+- Armazenamento das avaliações em banco de dados.
 
-- **Desconto base**: tabela por marca/modelo (355 modelos cadastrados) ou -20% padrão
-- **Quilometragem**:
-  - Veículo do ano atual: referência de 5.000 km ÷ 12 × mês atual (ex: julho = 2.917 km)
-  - Demais anos: km/ano sobre 12.000 km/ano de referência
-  - Faixas: até 3.000 km/ano (+6%), até 6.000 (+4%), até 9.000 (+2%), até 14.000 (+1%), até 16.000 (-1%), até 20.000 (-2%), até 25.000 (-4%), até 30.000 (-6%), acima de 30.000 (-7%)
-- **Pneus novos**: seleção por botões — carro: 1 a 4 pneus (+0,5% cada, máx. +2%); moto: 1 ou 2 pneus (+1,0% cada, máx. +2%)
-- **Revisão na concessionária**: +1% se sim, -4% se não
-- **Repintura**: -2,5% + dedução em R$ (peças × R$800, rodas × R$300)
-- **Repasse**: 92% do valor de oferta
+## Tecnologias
 
----
+- React Native
+- Expo SDK 54
+- TypeScript
+- Node.js
+- Vercel Serverless Functions
+- Supabase (PostgreSQL)
+- API FIPE
+- APIBrasil
 
-## Stack
+## Arquitetura
 
-| Camada | Tecnologia |
-|--------|-----------|
-| App mobile | React Native + Expo SDK 54 (iOS e Android) |
-| Backend | Vercel Serverless Functions (Node.js) |
-| Banco de dados | Supabase (Postgres + Auth + RLS) |
-| API FIPE | fipe.parallelum.com.br — gratuita, 500 req/dia sem token |
-| API de placa | APIBrasil — R$0,06/consulta |
-| Linguagem | TypeScript no app, JavaScript no backend |
+O projeto é dividido em dois componentes:
 
----
+- **Aplicativo mobile:** responsável pela interface, autenticação e processamento das regras de avaliação.
+- **Backend:** responsável pela consulta de placas e proteção das credenciais utilizadas nas integrações externas.
 
 ## Estrutura do projeto
 
-```
-App.tsx                              entrada, navegação e auth gate
+```text
 src/
-  api/
-    fipeApi.ts                       cliente FIPE gratuito (marca/modelo/ano)
-    plateApi.ts                      consulta por placa (com cache em sessão)
-  components/                        peças de UI reutilizáveis
-  domain/
-    types.ts                         tipos centrais
-    evaluationEngine.ts              motor de avaliação (regras e cálculos)
-    discountTable.ts                 tabela de descontos por marca/modelo (355 modelos)
-    brBrands.ts                      filtro de marcas do mercado brasileiro
-    plateValidation.ts               validação local de formato de placa
-  hooks/
-    useBottomPadding.ts              safe area dinâmica para ScrollViews
-  lib/
-    supabase.ts                      cliente Supabase com SecureStore chunked
-    plateCache.ts                    cache em sessão para consultas de placa
-  screens/
-    AuthScreen.tsx                   login (email/senha + Google + Apple no iOS)
-    SearchScreen.tsx                 busca por marca/modelo/ano ou placa
-    VersionSelectionScreen.tsx       seleção da versão FIPE quando há múltiplos matches
-    EvaluationFormScreen.tsx         formulário de condições do veículo
-    ResultScreen.tsx                 resultado com breakdown + repasse
-    HistoryScreen.tsx                histórico de avaliações salvas
-    EvaluationDetailScreen.tsx       detalhe de uma avaliação do histórico
-    OutcomeScreen.tsx                registro de desfecho (compra/venda)
-    PrivacyScreen.tsx                transparência LGPD
-  services/
-    evaluationService.ts             CRUD Supabase para avaliações e desfechos
-  types/
-    database.ts                      tipos espelho das tabelas Supabase
-  theme/
-    tokens.ts                        cores, espaçamentos e tipografia
+├── api/
+├── components/
+├── domain/
+├── hooks/
+├── lib/
+├── screens/
+├── services/
+├── theme/
+└── types/
+
 supabase/
-  schema.sql                         schema completo do banco (rodar no SQL Editor)
+└── schema.sql
 ```
 
----
+## Execução
 
-## Como rodar localmente
+### Pré-requisitos
 
-**Pré-requisitos**: Node.js 20+, conta no Expo (expo.dev), app Expo Go no celular.
+- Node.js 20 ou superior
+- Expo CLI
+- Conta no Expo
+
+### Instalação
 
 ```bash
 npm install
 npx expo start
 ```
 
-Escaneie o QR code com o Expo Go.
+Após iniciar o projeto, basta abrir o aplicativo Expo Go e escanear o QR Code.
 
-**Variáveis de ambiente** (arquivo `.env` na raiz — nunca commitar):
+## Variáveis de ambiente
+
+Crie um arquivo `.env` na raiz do projeto.
 
 ```env
-EXPO_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-EXPO_PUBLIC_BACKEND_URL=https://seu-backend.vercel.app
-EXPO_PUBLIC_FIPE_TOKEN=                # opcional — aumenta o limite gratuito para 1.000 req/dia
+EXPO_PUBLIC_SUPABASE_URL=*
+EXPO_PUBLIC_SUPABASE_ANON_KEY=*
+EXPO_PUBLIC_BACKEND_URL=*
+EXPO_PUBLIC_FIPE_TOKEN=*
 ```
 
----
+## Banco de dados
 
-## Autenticação
-
-Controlada pela constante `REQUIRE_AUTH` no `App.tsx`:
-
-```typescript
-const REQUIRE_AUTH = false; // false = modo desenvolvimento (sem login)
-                            // true  = produção (exige login)
-```
-
-Quando `true`, o app exige email/senha ou Google OAuth antes de qualquer acesso. O histórico e os desfechos ficam vinculados ao usuário logado com RLS no Supabase.
-
----
-
-## Gerar APK (Android)
-
-```bash
-eas build --platform android --profile preview
-```
-
-O build roda na nuvem (Expo EAS). Quando terminar, baixe o `.apk`:
-
-```bash
-eas build:download --id SEU-BUILD-ID
-```
-
----
-
-## Backend (avaliador-backend)
-
-Serverless na Vercel. Única responsabilidade: receber a placa do app e consultar a APIBrasil, mantendo o token da APIBrasil seguro no servidor. Aceita apenas placas nos formatos ABC1234 e ABC1D23 — validação nas duas pontas (app e backend).
-
-Variável de ambiente necessária na Vercel:
-```
-APIBRASIL_BEARER_TOKEN=eyJ...
-```
-
-Endpoints:
-- `GET  /api/health` — health check
-- `POST /api/plate-lookup` — consulta por placa
-
----
-
-## Banco de dados (Supabase)
-
-Para criar as tabelas no projeto Supabase, cole o conteúdo de `supabase/schema.sql` no SQL Editor e clique em Run.
-
-Tabelas: `profiles`, `evaluations`, `outcomes`
-View: `evaluations_with_outcome` (com `security_invoker = on`)
-
----
+O arquivo `supabase/schema.sql` contém a estrutura completa do banco de dados utilizada pela aplicação.
 
 ## Segurança
 
-- Chave APIBrasil: apenas no backend (nunca no app)
-- Sessão do usuário: `expo-secure-store` com chunking automático para tokens > 2048 bytes
-- RLS: cada usuário só acessa os próprios dados, mesmo com acesso direto ao Supabase
-- Source maps: desabilitados em produção (`extra.productionSourceMap: false`)
-- Botão voltar Android: único `BackHandler` listener para evitar comportamento duplo
-- Cache de placas: evita cobranças duplas para a mesma placa na mesma sessão
----
+- Autenticação utilizando Supabase Auth.
+- Row Level Security (RLS) para isolamento dos dados dos usuários.
+- Token da APIBrasil armazenado apenas no backend.
+- Armazenamento seguro das credenciais no dispositivo.
 
-## Changelog
+## Objetivo acadêmico
 
-### 2026-07-10
-- Seleção de pneus por botões (chips) para carros — 1 a 4 pneus, igual ao padrão das motos
-- Removida a busca por RENAVAM (app e backend aceitam apenas placa)
-- Tela de privacidade atualizada para refletir o comportamento real do app
-- Validação de placa nas duas pontas (app + backend)
-
-### 2026-07-08
-- Cache de placas em sessão (evita cobrança dupla da mesma placa)
-- TabBar com safe area correta (botões não ficam mais atrás da barra de gestos)
-- BackHandler único no Android (voltar físico navega o fluxo corretamente)
-- Km para veículos do ano atual: referência de 5.000 km ÷ 12 × mês atual
-
-### 2026-07-05
-- Revisão na concessionária: +1% (sim) / -4% (não)
-- Repintura com custo de preparação: peças ×R$800, rodas ×R$300
-- Valor de Repasse: 92% da oferta de compra
-- Fluxo de pneus: pergunta sim/não antes da quantidade
-
-### 2026-07-04
-- Correção de crash no APK Android (Apple Auth condicional, URL polyfill no entry point)
-- SecureStore com chunking para tokens grandes
-- Nova identidade visual aplicada
-
-### 2026-06-30
-- Autenticação Supabase (email/senha + Google OAuth)
-- Histórico de avaliações e registro de desfechos
-- Schema do banco com RLS e security hardening
+Este projeto foi desenvolvido como Trabalho de Conclusão de Curso, aplicando conceitos de desenvolvimento mobile, integração com APIs, banco de dados, autenticação de usuários e arquitetura cliente-servidor.
