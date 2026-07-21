@@ -1,15 +1,13 @@
 import { FipeBrand, FipeModel, FipeVehicleInfo, FipeYear, VehicleKind } from '../domain/types';
 import { filterBrazilianMarketBrands } from '../domain/brandFilters';
+import { supabase } from '../lib/supabase';
 
-// Cliente da API pública e gratuita da tabela FIPE (parallelum/fipe.online).
-// Nenhum dado pessoal passa por aqui — só marca, modelo e ano do veículo,
-// que não são dados pessoais sob a LGPD.
-//
-// Token opcional: sem token o limite é de 500 consultas/dia; com um token
-// gratuito (cadastro em https://fipe.online) o limite sobe para 1000/dia.
-// Definido via variável de ambiente pública do Expo (não é segredo).
-const BASE_URL = 'https://fipe.parallelum.com.br/api/v2';
-const SUBSCRIPTION_TOKEN = process.env.EXPO_PUBLIC_FIPE_TOKEN;
+// Consultas FIPE agora passam pelo backend (/api/fipe), não mais direto na
+// FIPE. Motivo: o token da FIPE saiu do app (era embutido e compartilhado por
+// todos, estourava a cota diária em escala e podia ser extraído). O backend
+// guarda o token e cacheia as respostas — compartilhado entre todos os
+// usuários. Nenhum dado pessoal passa por aqui, só marca/modelo/ano.
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL ?? '';
 
 class FipeApiError extends Error {
   constructor(message: string) {
@@ -19,20 +17,31 @@ class FipeApiError extends Error {
 }
 
 async function fipeFetch<T>(path: string): Promise<T> {
+  if (!BACKEND_URL) {
+    throw new FipeApiError('Backend não configurado. Adicione EXPO_PUBLIC_BACKEND_URL no .env do app.');
+  }
+
+  const { data: { session } } = await supabase.auth.getSession();
   const headers: Record<string, string> = {};
-  if (SUBSCRIPTION_TOKEN) {
-    headers['X-Subscription-Token'] = SUBSCRIPTION_TOKEN;
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`;
   }
 
   let response: Response;
   try {
-    response = await fetch(`${BASE_URL}${path}`, { headers });
+    response = await fetch(`${BACKEND_URL}/api/fipe?path=${encodeURIComponent(path)}`, { headers });
   } catch {
     throw new FipeApiError('Não foi possível conectar à tabela FIPE. Verifique sua internet.');
   }
 
+  if (response.status === 401) {
+    throw new FipeApiError('Sessão expirada. Faça login novamente.');
+  }
   if (response.status === 404) {
     throw new FipeApiError('Nenhum resultado encontrado para essa combinação.');
+  }
+  if (response.status === 429) {
+    throw new FipeApiError('Muitas consultas em pouco tempo. Aguarde um instante e tente de novo.');
   }
   if (!response.ok) {
     throw new FipeApiError('A tabela FIPE está indisponível agora. Tente novamente em instantes.');

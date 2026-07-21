@@ -37,31 +37,54 @@ export interface Evaluation {
   preparation_cost: number;
   final_offer_value: number;
   repasse_value: number;
+  offer_value: number | null; // oferta informada pelo avaliador (opcional)
   notes: string | null;
   created_at: string;
 }
+
+export type OutcomeStatus = 'purchased' | 'negotiating' | 'not_purchased';
 
 export interface Outcome {
   id: string;
   evaluation_id: string;
   user_id: string;
   was_purchased: boolean | null;
+  status: OutcomeStatus | null;
   purchase_price: number | null;
   purchase_date: string | null;
+  negotiation_price: number | null;
   was_sold: boolean;
   sale_price: number | null;
   sale_date: string | null;
   notes: string | null;
+  contact_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Contato/lead: com quem o lojista negocia. Dado pessoal (LGPD) — RLS por usuário.
+export interface Contact {
+  id: string;
+  user_id: string;
+  name: string;               // contato (ex: Mateus)
+  company_group: string | null; // grupo/empresa (ex: AutoNation)
+  phone: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface EvaluationWithOutcome extends Evaluation {
   was_purchased?: boolean | null;
+  outcome_status?: OutcomeStatus | null;
   purchase_price?: number | null;
   purchase_date?: string | null;
+  negotiation_price?: number | null;
   was_sold?: boolean;
   sale_price?: number | null;
   sale_date?: string | null;
   outcome_notes?: string | null;
+  contact_id?: string | null;
+  contact_name?: string | null;
+  contact_group?: string | null;
+  contact_phone?: string | null;
 }

@@ -230,17 +230,6 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
             </Text>
           </Pressable>
 
-          <SelectField
-            label="Modelo"
-            placeholder={brand ? 'Selecione o modelo' : 'Selecione a marca primeiro'}
-            options={models}
-            value={model}
-            onSelect={setModel}
-            onClear={() => setModel(null)}
-            disabled={!brand}
-            loading={loadingModels}
-          />
-
           <YearFuelSelect
             label="Ano / combustível"
             placeholder={brand ? 'Selecione o combustível' : 'Selecione a marca primeiro'}
@@ -250,6 +239,17 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
             onClear={() => setYear(null)}
             disabled={!brand}
             loading={loadingYears}
+          />
+
+          <SelectField
+            label="Modelo"
+            placeholder={brand ? 'Selecione o modelo' : 'Selecione a marca primeiro'}
+            options={models}
+            value={model}
+            onSelect={setModel}
+            onClear={() => setModel(null)}
+            disabled={!brand}
+            loading={loadingModels}
           />
 
           {manualError ? (

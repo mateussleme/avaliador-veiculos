@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fontFamily, spacing, type } from '../theme/tokens';
 
-export type TabKey = 'evaluate' | 'history';
+export type TabKey = 'evaluate' | 'history' | 'contacts';
 
 interface TabBarProps {
   active: TabKey;
@@ -13,6 +13,7 @@ interface TabBarProps {
 const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: 'evaluate', label: 'Avaliar',   icon: '＋' },
   { key: 'history',  label: 'Histórico', icon: '☰' },
+  { key: 'contacts', label: 'Contatos',  icon: '＠' },
 ];
 
 export function TabBar({ active, onChange }: TabBarProps) {

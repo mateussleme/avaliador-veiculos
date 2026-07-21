@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -12,9 +12,10 @@ import {
   View,
 } from 'react-native';
 import { Card, SectionLabel } from '../components/Card';
+import { ContactPicker } from '../components/ContactPicker';
 import { OptionGroup } from '../components/OptionGroup';
 import { saveOutcome } from '../services/evaluationService';
-import { EvaluationWithOutcome } from '../types/database';
+import { Contact, EvaluationWithOutcome, OutcomeStatus } from '../types/database';
 import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 
 
@@ -41,17 +42,32 @@ function formatMoneyInput(text: string): string {
   return value > 0 ? value.toLocaleString('pt-BR') : '';
 }
 
-const PURCHASE_OPTIONS: { value: 'yes' | 'no'; label: string }[] = [
-  { value: 'yes', label: 'Sim, foi comprado' },
-  { value: 'no',  label: 'Não foi comprado' },
+const STATUS_OPTIONS: { value: OutcomeStatus; label: string }[] = [
+  { value: 'purchased',     label: 'Comprado' },
+  { value: 'negotiating',   label: 'Em negociação' },
+  { value: 'not_purchased', label: 'Não comprado' },
 ];
 
 export function OutcomeScreen({ evaluation, onSaved }: OutcomeScreenProps) {
-  const [wasPurchased, setWasPurchased] = useState<'yes' | 'no'>(
-    evaluation.was_purchased === false ? 'no' : 'yes'
-  );
-  const [purchasePriceText, setPurchasePriceText] = useState(
-    evaluation.purchase_price ? String(evaluation.purchase_price) : String(Math.round(evaluation.final_offer_value))
+  const scrollRef = useRef<ScrollView>(null);
+  // Ao focar um campo de valor, rola a tela pra ele não ficar atrás do teclado.
+  function scrollToInput() {
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 250);
+  }
+
+  const [status, setStatus] = useState<OutcomeStatus>(evaluation.outcome_status ?? 'purchased');
+
+  // Um único valor para "pago na compra" e "em negociação": é o mesmo número
+  // (quanto o avaliador está pagando/oferecendo). Assim, ao alternar entre
+  // Comprado e Em negociação, o que foi digitado não se perde.
+  // Prefill: valor já registrado > oferta informada na avaliação > sugestão.
+  const [valueText, setValueText] = useState(
+    String(
+      evaluation.purchase_price ??
+      evaluation.negotiation_price ??
+      evaluation.offer_value ??
+      Math.round(evaluation.final_offer_value)
+    )
   );
   const [purchaseDate] = useState(evaluation.purchase_date ?? todayISO());
 
@@ -62,18 +78,35 @@ export function OutcomeScreen({ evaluation, onSaved }: OutcomeScreenProps) {
   const [notes, setNotes] = useState(evaluation.outcome_notes ?? '');
   const [saving, setSaving] = useState(false);
 
+  // Contato já vinculado (se houver) reconstruído a partir da view.
+  const [contact, setContact] = useState<Contact | null>(
+    evaluation.contact_id
+      ? {
+          id: evaluation.contact_id,
+          user_id: evaluation.user_id,
+          name: evaluation.contact_name ?? 'Contato',
+          company_group: evaluation.contact_group ?? null,
+          phone: evaluation.contact_phone ?? null,
+          created_at: '',
+          updated_at: '',
+        }
+      : null
+  );
+
   async function handleSave() {
     setSaving(true);
     try {
       await saveOutcome({
         evaluationId: evaluation.id,
-        wasPurchased: wasPurchased === 'yes',
-        purchasePrice: wasPurchased === 'yes' ? parseMoney(purchasePriceText) : undefined,
-        purchaseDate: wasPurchased === 'yes' ? purchaseDate : undefined,
-        wasSold: wasPurchased === 'yes' ? wasSold : false,
-        salePrice: wasSold ? parseMoney(salePriceText) : undefined,
-        saleDate: wasSold ? saleDate : undefined,
+        status,
+        purchasePrice: status === 'purchased' ? parseMoney(valueText) : undefined,
+        negotiationPrice: status === 'negotiating' ? parseMoney(valueText) : undefined,
+        purchaseDate: status === 'purchased' ? purchaseDate : undefined,
+        wasSold: status === 'purchased' ? wasSold : false,
+        salePrice: status === 'purchased' && wasSold ? parseMoney(salePriceText) : undefined,
+        saleDate: status === 'purchased' && wasSold ? saleDate : undefined,
         notes: notes.trim() || undefined,
+        contactId: contact?.id ?? null,
       });
       Alert.alert('Salvo!', 'O desfecho foi registrado com sucesso.', [{ text: 'OK', onPress: onSaved }]);
     } catch (err: any) {
@@ -85,13 +118,13 @@ export function OutcomeScreen({ evaluation, onSaved }: OutcomeScreenProps) {
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
         <Card style={styles.summaryCard}>
           <SectionLabel>Veículo avaliado</SectionLabel>
           <Text style={styles.vehicleName}>{evaluation.brand} {evaluation.model}</Text>
           <Text style={styles.vehicleMeta}>
-            {evaluation.model_year} · oferta de compra {formatCurrency(evaluation.final_offer_value)}
+            {evaluation.model_year} · sugestão de compra {formatCurrency(evaluation.final_offer_value)}
           </Text>
         </Card>
 
@@ -101,17 +134,42 @@ export function OutcomeScreen({ evaluation, onSaved }: OutcomeScreenProps) {
         </Text>
 
         <Card style={styles.card}>
-          <SectionLabel>Esse veículo foi comprado?</SectionLabel>
-          <OptionGroup options={PURCHASE_OPTIONS} value={wasPurchased} onChange={setWasPurchased} />
+          <SectionLabel>Contato / grupo</SectionLabel>
+          <ContactPicker selected={contact} onChange={setContact} />
+          <Text style={styles.contactHint}>
+            Vincule com quem você negociou. Depois é possível buscar por contato ou grupo
+            e ver todos os carros cotados.
+          </Text>
         </Card>
 
-        {wasPurchased === 'yes' && (
+        <Card style={styles.card}>
+          <SectionLabel>Qual o desfecho?</SectionLabel>
+          <OptionGroup options={STATUS_OPTIONS} value={status} onChange={setStatus} />
+        </Card>
+
+        {status === 'negotiating' && (
+          <Card style={styles.card}>
+            <SectionLabel>Valor em negociação</SectionLabel>
+            <TextInput
+              value={formatMoneyInput(valueText)}
+              onChangeText={setValueText}
+              onFocus={scrollToInput}
+              placeholder="Ex: 25000"
+              placeholderTextColor={colors.textTertiary}
+              keyboardType="number-pad"
+              style={styles.input}
+            />
+          </Card>
+        )}
+
+        {status === 'purchased' && (
           <>
             <Card style={styles.card}>
               <SectionLabel>Valor pago na compra</SectionLabel>
               <TextInput
-                value={formatMoneyInput(purchasePriceText)}
-                onChangeText={setPurchasePriceText}
+                value={formatMoneyInput(valueText)}
+                onChangeText={setValueText}
+                onFocus={scrollToInput}
                 placeholder="Ex: 25000"
                 placeholderTextColor={colors.textTertiary}
                 keyboardType="number-pad"
@@ -137,14 +195,15 @@ export function OutcomeScreen({ evaluation, onSaved }: OutcomeScreenProps) {
                 <TextInput
                   value={formatMoneyInput(salePriceText)}
                   onChangeText={setSalePriceText}
+                  onFocus={scrollToInput}
                   placeholder="Ex: 29900"
                   placeholderTextColor={colors.textTertiary}
                   keyboardType="number-pad"
                   style={styles.input}
                 />
-                {salePriceText && purchasePriceText ? (
+                {salePriceText && valueText ? (
                   <Text style={styles.marginNote}>
-                    Margem: {formatCurrency(parseMoney(salePriceText) - parseMoney(purchasePriceText))}
+                    Margem: {formatCurrency(parseMoney(salePriceText) - parseMoney(valueText))}
                   </Text>
                 ) : null}
               </Card>
@@ -179,12 +238,13 @@ export function OutcomeScreen({ evaluation, onSaved }: OutcomeScreenProps) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  scroll: { padding: spacing.lg, paddingBottom: 340 },
   summaryCard: { marginBottom: spacing.md },
   vehicleName: { fontSize: type.h2.fontSize, fontWeight: type.h2.fontWeight, color: colors.textPrimary, fontFamily: fontFamily.spaceGrotesk },
   vehicleMeta: { fontSize: type.caption.fontSize, color: colors.textSecondary, marginTop: 2, fontFamily: fontFamily.inter },
   intro: { fontSize: type.body.fontSize, lineHeight: type.body.lineHeight, color: colors.textSecondary, marginBottom: spacing.lg, fontFamily: fontFamily.inter },
   card: { marginBottom: spacing.md },
+  contactHint: { fontSize: type.caption.fontSize, color: colors.textTertiary, marginTop: spacing.sm, lineHeight: 16, fontFamily: fontFamily.inter },
   input: { fontSize: type.h2.fontSize, color: colors.textPrimary, paddingVertical: spacing.sm, fontFamily: fontFamily.spaceGrotesk },
   textArea: { fontSize: type.body.fontSize, minHeight: 70, textAlignVertical: 'top', fontFamily: fontFamily.inter },
   toggleRow: { flexDirection: 'row', gap: spacing.sm },

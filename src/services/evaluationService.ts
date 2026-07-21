@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { EvaluationInput, EvaluationResult, FipeVehicleInfo, VehicleKind } from '../domain/types';
-import { EvaluationWithOutcome } from '../types/database';
+import { EvaluationWithOutcome, OutcomeStatus } from '../types/database';
 
 // Nota: estas funções requerem sessão ativa no Supabase.
 // Quando REQUIRE_AUTH=false no App.tsx, o botão "Salvar" mostra um Alert
@@ -12,6 +12,7 @@ export interface SaveEvaluationInput {
   input: EvaluationInput;
   result: EvaluationResult;
   plate?: string;
+  offerValue?: number; // oferta informada pelo avaliador (opcional)
 }
 
 export async function saveEvaluation(data: SaveEvaluationInput): Promise<string> {
@@ -49,6 +50,7 @@ export async function saveEvaluation(data: SaveEvaluationInput): Promise<string>
       preparation_cost:      data.result.preparationCost,
       final_offer_value:     data.result.finalOfferValue,
       repasse_value:         data.result.repasseValue,
+      offer_value:           data.offerValue && data.offerValue > 0 ? data.offerValue : null,
     })
     .select('id')
     .single();
@@ -71,10 +73,39 @@ export async function deleteEvaluation(evaluationId: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-export async function fetchEvaluations(limit = 50): Promise<EvaluationWithOutcome[]> {
+export const HISTORY_PAGE_SIZE = 30;
+
+// Página do histórico. Antes o app buscava um bloco fixo de 100 e as avaliações
+// mais antigas simplesmente sumiam da tela; agora carrega sob demanda.
+export async function fetchEvaluationsPage(
+  offset: number,
+  limit = HISTORY_PAGE_SIZE
+): Promise<EvaluationWithOutcome[]> {
   const { data, error } = await supabase
     .from('evaluations_with_outcome')
     .select('*')
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as EvaluationWithOutcome[];
+}
+
+// Busca no banco INTEIRO (placa, marca ou modelo), não só nas páginas já
+// carregadas — senão procurar um carro antigo não acharia nada.
+export async function searchEvaluations(
+  term: string,
+  limit = 50
+): Promise<EvaluationWithOutcome[]> {
+  // Vírgula, % e parênteses quebram a sintaxe do filtro .or() do PostgREST.
+  const safe = term.trim().replace(/[,%()]/g, ' ').trim();
+  if (!safe) return [];
+  const pattern = `%${safe}%`;
+
+  const { data, error } = await supabase
+    .from('evaluations_with_outcome')
+    .select('*')
+    .or(`plate.ilike.${pattern},brand.ilike.${pattern},model.ilike.${pattern}`)
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -84,13 +115,15 @@ export async function fetchEvaluations(limit = 50): Promise<EvaluationWithOutcom
 
 export interface SaveOutcomeInput {
   evaluationId: string;
-  wasPurchased: boolean;
-  purchasePrice?: number;
+  status: OutcomeStatus;
+  purchasePrice?: number;      // status = 'purchased'
+  negotiationPrice?: number;   // status = 'negotiating'
   purchaseDate?: string;
   wasSold?: boolean;
   salePrice?: number;
   saleDate?: string;
   notes?: string;
+  contactId?: string | null; // contato vinculado ao desfecho
 }
 
 export async function saveOutcome(data: SaveOutcomeInput): Promise<void> {
@@ -98,16 +131,20 @@ export async function saveOutcome(data: SaveOutcomeInput): Promise<void> {
   if (!user) throw new Error('Usuário não autenticado.');
 
   const payload = {
-    evaluation_id:  data.evaluationId,
-    user_id:        user.id,
-    was_purchased:  data.wasPurchased,
-    purchase_price: data.purchasePrice ?? null,
-    purchase_date:  data.purchaseDate  ?? null,
-    was_sold:       data.wasSold       ?? false,
-    sale_price:     data.salePrice     ?? null,
-    sale_date:      data.saleDate      ?? null,
-    notes:          data.notes         ?? null,
-    updated_at:     new Date().toISOString(),
+    evaluation_id:     data.evaluationId,
+    user_id:           user.id,
+    status:            data.status,
+    // was_purchased é legado: true só quando comprado.
+    was_purchased:     data.status === 'purchased',
+    purchase_price:    data.status === 'purchased'   ? (data.purchasePrice ?? null)    : null,
+    purchase_date:     data.status === 'purchased'   ? (data.purchaseDate ?? null)     : null,
+    negotiation_price: data.status === 'negotiating' ? (data.negotiationPrice ?? null) : null,
+    was_sold:          data.status === 'purchased'   ? (data.wasSold ?? false)         : false,
+    sale_price:        data.salePrice  ?? null,
+    sale_date:         data.saleDate   ?? null,
+    notes:             data.notes      ?? null,
+    contact_id:        data.contactId  ?? null,
+    updated_at:        new Date().toISOString(),
   };
 
   // Upsert: cria ou atualiza (evaluation_id é UNIQUE na tabela outcomes)

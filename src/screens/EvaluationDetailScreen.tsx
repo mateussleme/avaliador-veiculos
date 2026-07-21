@@ -20,7 +20,19 @@ function formatDate(iso: string): string {
 }
 
 export function EvaluationDetailScreen({ evaluation, onRegisterOutcome }: EvaluationDetailScreenProps) {
-  const hasOutcome = evaluation.was_purchased !== null && evaluation.was_purchased !== undefined;
+  const hasOutcome = !!evaluation.outcome_status;
+
+  // Valor que o AVALIADOR ofertou. Prioridade: o valor do desfecho (comprado ->
+  // pago, em negociação -> valor da negociação); se ainda não há desfecho, usa
+  // a oferta informada na avaliação (offer_value). Diferente da "sugestão de
+  // compra", que é o valor calculado pelo app.
+  const offerValue =
+    evaluation.outcome_status === 'purchased'
+      ? evaluation.purchase_price
+      : evaluation.outcome_status === 'negotiating'
+        ? evaluation.negotiation_price
+        : evaluation.offer_value ?? null;
+  const offerLabel = evaluation.outcome_status === 'negotiating' ? 'Oferta em negociação' : 'Oferta de compra';
 
   return (
     <ScrollView contentContainerStyle={styles.scroll}>
@@ -31,8 +43,16 @@ export function EvaluationDetailScreen({ evaluation, onRegisterOutcome }: Evalua
       <Text style={styles.dateText}>Avaliado em {formatDate(evaluation.created_at)}</Text>
 
       <Card style={styles.heroCard}>
-        <SectionLabel>Oferta de compra</SectionLabel>
+        <SectionLabel>Sugestão de compra</SectionLabel>
         <Text style={styles.estimatedValue}>{formatCurrency(evaluation.final_offer_value)}</Text>
+
+        {offerValue ? (
+          <View style={styles.offerRow}>
+            <Text style={styles.offerLabel}>{offerLabel}</Text>
+            <Text style={styles.offerValue}>{formatCurrency(offerValue)}</Text>
+          </View>
+        ) : null}
+
         <View style={styles.compareRow}>
           <View>
             <Text style={styles.compareLabel}>Tabela FIPE</Text>
@@ -96,8 +116,12 @@ export function EvaluationDetailScreen({ evaluation, onRegisterOutcome }: Evalua
         <SectionLabel>Desfecho</SectionLabel>
         {!hasOutcome ? (
           <Text style={styles.detailLine}>Ainda não registrado.</Text>
-        ) : !evaluation.was_purchased ? (
+        ) : evaluation.outcome_status === 'not_purchased' ? (
           <Text style={styles.detailLine}>Não foi comprado.</Text>
+        ) : evaluation.outcome_status === 'negotiating' ? (
+          <Text style={styles.detailLine}>
+            Em negociação{evaluation.negotiation_price ? ` por ${formatCurrency(evaluation.negotiation_price)}` : ''}.
+          </Text>
         ) : (
           <>
             <Text style={styles.detailLine}>
@@ -132,6 +156,18 @@ const styles = StyleSheet.create({
   dateText: { fontSize: type.caption.fontSize, color: colors.textTertiary, marginBottom: spacing.lg, fontFamily: fontFamily.inter },
   heroCard: { marginBottom: spacing.md },
   estimatedValue: { fontSize: 30, fontWeight: '700', color: colors.ink, marginTop: 2, marginBottom: spacing.md, fontFamily: fontFamily.spaceGrotesk },
+  offerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.sm + 2,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: radius.md,
+  },
+  offerLabel: { fontSize: type.caption.fontSize, color: colors.textSecondary, fontFamily: fontFamily.inter },
+  offerValue: { fontSize: type.h2.fontSize, fontWeight: '700', color: colors.textPrimary, fontFamily: fontFamily.spaceGrotesk },
   compareRow: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.border },
   compareRight: { alignItems: 'flex-end' },
   compareLabel: { fontSize: type.caption.fontSize, color: colors.textTertiary, marginBottom: 2, fontFamily: fontFamily.inter },

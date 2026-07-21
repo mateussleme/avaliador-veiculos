@@ -56,7 +56,7 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "BMW", model: "X1", discount: 0.18 }, // 18%
   { brand: "BMW", model: "X2", discount: 0.2 }, // 20%
   { brand: "BMW", model: "X3", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "X4", discount: 0.18 }, // 18%
+  { brand: "BMW", model: "X4", discount: 0.22 }, // 22%
   { brand: "BMW", model: "X5", discount: 0.25 }, // 25%
   { brand: "BMW", model: "X6", discount: 0.18 }, // 18%
   { brand: "BMW", model: "X7", discount: 0.3 }, // 30%
@@ -78,8 +78,10 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
 
   // Land Rover
   { brand: "Land Rover", model: "Defender", discount: 0.22 }, // 22%
-  { brand: "Land Rover", model: "Discovery", discount: 0.25 }, // 25%
-  { brand: "Land Rover", model: "Discovery Sport", discount: 0.25 }, // 25%
+  { brand: "Land Rover", model: "Discovery", discount: 0.30 }, // 30%
+  { brand: "Land Rover", model: "Discovery3", discount: 0.30 }, // 30%
+  { brand: "Land Rover", model: "Discovery4", discount: 0.30 }, // 30%
+  { brand: "Land Rover", model: "Discovery Sport", discount: 0.30 }, // 30%
   { brand: "Land Rover", model: "Discov Metrop", discount: 0.28 }, // 28% — "Discov. Metrop." (FIPE abrevia)
   { brand: "Land Rover", model: "Range Rover", discount: 0.25 }, // 25%
   { brand: "Land Rover", model: "Range Rover Evoque", discount: 0.25 }, // 25%
@@ -486,12 +488,15 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
 
 // ---- Matching tolerante a variações de grafia ----
 
+// Regex criada uma vez só. Antes era instanciada a cada chamada de normalize()
+// — e normalize() roda milhares de vezes por busca, então isso pesava.
+const COMBINING_MARKS = new RegExp('[̀-ͯ]', 'g');
+
 export function normalize(s: string): string {
-  const combiningMarksPattern = new RegExp('[̀-ͯ]', 'g');
   return s
     .toLowerCase()
     .normalize('NFD')
-    .replace(combiningMarksPattern, '')
+    .replace(COMBINING_MARKS, '')
     .replace(/[^a-z0-9 ]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
@@ -556,14 +561,58 @@ export interface DiscountLookupResult {
  * 2. Match parcial por palavras completas (evita "M5" casar com "X5 M50i")
  * 3. Fallback: DEFAULT_DISCOUNT_PERCENT
  */
+// ---- Índice pré-calculado + cache (performance) ----
+//
+// Antes, cada busca normalizava marca e modelo de TODAS as ~380 entradas da
+// tabela, duas vezes (match exato + parcial). Como lookupDiscount roda a cada
+// tecla digitada no campo de km (via preview), isso custava ~1ms por tecla no
+// desktop e bem mais em celular modesto.
+//
+// Agora a normalização de cada entrada é feita UMA vez (lazy, no primeiro uso)
+// e o resultado de cada par marca+modelo fica em cache. O comportamento do
+// match é exatamente o mesmo — só deixou de refazer trabalho repetido.
+interface IndexedEntry {
+  entry: DiscountEntry;
+  nb: string;      // marca normalizada
+  nm: string;      // modelo normalizado
+  words: string[]; // tokens do modelo
+}
+
+let _index: IndexedEntry[] | null = null;
+
+// Lazy: BRAND_ALIASES/normBrand são declarados depois da tabela, então o
+// índice não pode ser montado no topo do módulo.
+function getIndex(): IndexedEntry[] {
+  if (!_index) {
+    _index = DISCOUNT_TABLE.map((entry) => ({
+      entry,
+      nb: normBrand(entry.brand),
+      nm: normalize(entry.model),
+      words: tableWordsOf(entry.model),
+    }));
+  }
+  return _index;
+}
+
+const _lookupCache = new Map<string, DiscountLookupResult>();
+
 export function lookupDiscount(brand: string, model: string): DiscountLookupResult {
+  const cacheKey = `${brand}|${model}`;
+  const cached = _lookupCache.get(cacheKey);
+  if (cached) return cached;
+
+  const result = computeDiscount(brand, model);
+  _lookupCache.set(cacheKey, result);
+  return result;
+}
+
+function computeDiscount(brand: string, model: string): DiscountLookupResult {
+  const index = getIndex();
   const nb = normBrand(brand);
   const nm = normalize(model);
 
   // 1. Match exato
-  const exact = DISCOUNT_TABLE.find(
-    (e) => normBrand(e.brand) === nb && normalize(e.model) === nm
-  );
+  const exact = index.find((e) => e.nb === nb && e.nm === nm)?.entry;
   if (exact) {
     return { discount: exact.discount, discountPercent: Math.round(exact.discount * 100), source: 'table', matchedBrand: exact.brand, matchedModel: exact.model, kmPerYear: exact.kmPerYear };
   }
@@ -581,17 +630,15 @@ export function lookupDiscount(brand: string, model: string): DiscountLookupResu
   //    classe + número ("A 200", "C 200", "S 560"...) — se descartássemos a letra,
   //    "A 200" e "C 200" virariam o mesmo token ["200"] e a primeira da lista
   //    venceria mesmo para um "C 200" (bug real, achado ao testar essa correção).
-  const nmWords = nm.split(' ');
-  const candidates = DISCOUNT_TABLE.filter((e) => {
-    if (normBrand(e.brand) !== nb) return false;
-    const tableWords = tableWordsOf(e.model);
-    return tableWords.length > 0 && tableWords.every(w => nmWords.includes(w));
-  });
-  const partial = candidates.length > 0
-    ? candidates.reduce((best, cur) =>
-        tableWordsOf(cur.model).length > tableWordsOf(best.model).length ? cur : best
-      )
+  // Set em vez de array: a checagem de cada token vira O(1).
+  const nmWords = new Set(nm.split(' '));
+  const candidates = index.filter(
+    (e) => e.nb === nb && e.words.length > 0 && e.words.every((w) => nmWords.has(w))
+  );
+  const partialIdx = candidates.length > 0
+    ? candidates.reduce((best, cur) => (cur.words.length > best.words.length ? cur : best))
     : undefined;
+  const partial = partialIdx?.entry;
   if (partial) {
     return { discount: partial.discount, discountPercent: Math.round(partial.discount * 100), source: 'table', matchedBrand: partial.brand, matchedModel: partial.model, kmPerYear: partial.kmPerYear };
   }

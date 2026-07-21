@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
 import { GaugeBar } from '../components/GaugeBar';
@@ -28,6 +28,16 @@ function formatCurrency(value: number): string {
   });
 }
 
+function parseMoney(text: string): number {
+  const numeric = text.replace(/\D/g, '');
+  return numeric ? parseInt(numeric, 10) : 0;
+}
+
+function formatMoneyInput(text: string): string {
+  const value = parseMoney(text);
+  return value > 0 ? value.toLocaleString('pt-BR') : '';
+}
+
 function severityColor(severity: AdjustmentSeverity) {
   switch (severity) {
     case 'good':
@@ -44,6 +54,9 @@ function severityColor(severity: AdjustmentSeverity) {
 export function ResultScreen({ kind, vehicle, input, result, plate, sessionToken, onRestart, onSaved }: ResultScreenProps) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [offerText, setOfferText] = useState('');
+  // Evita recalcular o parse várias vezes por render (era chamado 4x na dica).
+  const offerNumber = useMemo(() => parseMoney(offerText), [offerText]);
 
   async function handleSave() {
     if (!sessionToken) {
@@ -56,7 +69,7 @@ export function ResultScreen({ kind, vehicle, input, result, plate, sessionToken
     }
     setSaving(true);
     try {
-      const id = await saveEvaluation({ kind, vehicle, input, result, plate });
+      const id = await saveEvaluation({ kind, vehicle, input, result, plate, offerValue: parseMoney(offerText) });
       setSaved(true);
       onSaved?.(id);
     } catch (err: any) {
@@ -78,8 +91,8 @@ export function ResultScreen({ kind, vehicle, input, result, plate, sessionToken
 
       <Card style={styles.heroCard}>
 
-        {/* ---- Bloco principal: Oferta de Compra ---- */}
-        <SectionLabel>Oferta de compra</SectionLabel>
+        {/* ---- Bloco principal: Sugestão de Compra (valor calculado pelo app) ---- */}
+        <SectionLabel>Sugestão de compra</SectionLabel>
         <Text style={styles.estimatedValue}>{formatCurrency(result.finalOfferValue)}</Text>
         <Text style={styles.positionLabel}>{result.positionLabel}</Text>
 
@@ -151,7 +164,7 @@ export function ResultScreen({ kind, vehicle, input, result, plate, sessionToken
         <View style={styles.repasseCard}>
           <View>
             <Text style={styles.repasseLabel}>Valor para Repasse</Text>
-            <Text style={styles.repasseNote}>92% da oferta de compra</Text>
+            <Text style={styles.repasseNote}>92% da sugestão de compra</Text>
           </View>
           <Text style={styles.repasseValue}>{formatCurrency(result.repasseValue)}</Text>
         </View>
@@ -164,6 +177,31 @@ export function ResultScreen({ kind, vehicle, input, result, plate, sessionToken
         ) : (
           <Text style={styles.discountSourceNote}>
             Desconto padrão de {result.baseDiscountPercent}% (modelo não encontrado na tabela).
+          </Text>
+        )}
+      </Card>
+
+      <Card style={styles.offerCard}>
+        <SectionLabel>Sua oferta de compra (opcional)</SectionLabel>
+        <TextInput
+          value={formatMoneyInput(offerText)}
+          onChangeText={setOfferText}
+          placeholder="Quanto você ofertaria?"
+          placeholderTextColor={colors.textTertiary}
+          keyboardType="number-pad"
+          style={styles.offerInput}
+        />
+        {offerNumber > 0 ? (
+          <Text style={styles.offerHint}>
+            {offerNumber === Math.round(result.finalOfferValue)
+              ? 'Igual à sugestão do app.'
+              : `${formatCurrency(Math.abs(offerNumber - Math.round(result.finalOfferValue)))} ${
+                  offerNumber < result.finalOfferValue ? 'abaixo' : 'acima'
+                } da sugestão.`}
+          </Text>
+        ) : (
+          <Text style={styles.offerHint}>
+            Registre quanto você pretende ofertar por este veículo. Fica salvo junto da avaliação.
           </Text>
         )}
       </Card>
@@ -339,6 +377,23 @@ const styles = StyleSheet.create({
     fontWeight: type.h2.fontWeight,
     color: colors.textPrimary,
     fontFamily: fontFamily.spaceGrotesk,
+  },
+  offerCard: {
+    marginBottom: spacing.lg,
+  },
+  offerInput: {
+    fontSize: type.h2.fontSize,
+    color: colors.textPrimary,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.xs,
+    fontFamily: fontFamily.spaceGrotesk,
+  },
+  offerHint: {
+    fontSize: type.caption.fontSize,
+    color: colors.textTertiary,
+    marginTop: spacing.xs,
+    lineHeight: 16,
+    fontFamily: fontFamily.inter,
   },
   breakdownTitle: {
     fontSize: type.h2.fontSize,

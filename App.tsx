@@ -17,10 +17,13 @@ import { ResultScreen } from './src/screens/ResultScreen';
 import { HistoryScreen } from './src/screens/HistoryScreen';
 import { EvaluationDetailScreen } from './src/screens/EvaluationDetailScreen';
 import { OutcomeScreen } from './src/screens/OutcomeScreen';
+import { ContactsScreen } from './src/screens/ContactsScreen';
+import { ContactDetailScreen } from './src/screens/ContactDetailScreen';
 import { colors } from './src/theme/tokens';
 import { EvaluationInput, EvaluationResult, FipeVehicleInfo, VehicleKind } from './src/domain/types';
 import { FipeVersionMatch } from './src/api/plateApi';
 import { EvaluationWithOutcome } from './src/types/database';
+import { ContactSummary } from './src/services/contactService';
 
 // ============================================================
 // FLAG DE AUTENTICAÇÃO
@@ -32,6 +35,7 @@ const REQUIRE_AUTH = true;
 
 type EvalStep = 'search' | 'version-select' | 'form' | 'result';
 type HistoryStep = 'list' | 'detail' | 'outcome';
+type ContactsStep = 'list' | 'detail';
 
 export default function App() {
   const [session, setSession]     = useState<Session | null>(null);
@@ -66,6 +70,11 @@ export default function App() {
   const [historyStep, setHistoryStep] = useState<HistoryStep>('list');
   const [selectedEvaluation, setSelectedEvaluation] = useState<EvaluationWithOutcome | null>(null);
   const [historyRefresh, setHistoryRefresh] = useState(0);
+
+  // ---- Fluxo de contatos ----
+  const [contactsStep, setContactsStep] = useState<ContactsStep>('list');
+  const [selectedContact, setSelectedContact] = useState<ContactSummary | null>(null);
+  const [contactsRefresh, setContactsRefresh] = useState(0);
 
   const [privacyOpen, setPrivacyOpen] = useState(false);
 
@@ -114,8 +123,14 @@ export default function App() {
 
   function handleOutcomeSaved() {
     setHistoryRefresh(n => n + 1);
+    setContactsRefresh(n => n + 1); // desfecho pode vincular contato → atualiza a aba Contatos
     setHistoryStep('list');
     setSelectedEvaluation(null);
+  }
+
+  function handleSelectContact(summary: ContactSummary) {
+    setSelectedContact(summary);
+    setContactsStep('detail');
   }
 
   function handleTabChange(tab: TabKey) {
@@ -123,6 +138,10 @@ export default function App() {
     if (tab === 'history') {
       setHistoryStep('list');
       setSelectedEvaluation(null);
+    }
+    if (tab === 'contacts') {
+      setContactsStep('list');
+      setSelectedContact(null);
     }
   }
 
@@ -137,6 +156,10 @@ export default function App() {
         if (historyStep === 'detail')  { setHistoryStep('list');   return true; }
         return false;
       }
+      if (activeTab === 'contacts') {
+        if (contactsStep === 'detail') { setContactsStep('list'); return true; }
+        return false;
+      }
       if (evalStep === 'result')         { setEvalStep('form');                                     return true; }
       if (evalStep === 'form')           { setEvalStep(allMatches ? 'version-select' : 'search');   return true; }
       if (evalStep === 'version-select') { setEvalStep('search');                                   return true; }
@@ -145,13 +168,17 @@ export default function App() {
 
     const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
     return () => sub.remove();
-  }, [privacyOpen, activeTab, historyStep, evalStep, allMatches]);
+  }, [privacyOpen, activeTab, historyStep, contactsStep, evalStep, allMatches]);
 
   function getHeaderProps() {
     if (activeTab === 'history') {
       if (historyStep === 'detail')  return { title: 'Detalhes da avaliação', onBack: () => setHistoryStep('list') };
       if (historyStep === 'outcome') return { title: 'Registrar desfecho', onBack: () => setHistoryStep('detail') };
       return { title: 'Histórico' };
+    }
+    if (activeTab === 'contacts') {
+      if (contactsStep === 'detail') return { title: 'Contato', onBack: () => setContactsStep('list') };
+      return { title: 'Contatos', subtitle: 'Cotações por contato e grupo' };
     }
     switch (evalStep) {
       case 'search':         return { title: 'AutoValor', subtitle: 'Busca por marca, modelo e ano' };
@@ -194,7 +221,9 @@ export default function App() {
   }
 
   // ---- App principal ----
-  const showTabBar = !(activeTab === 'history' && historyStep !== 'list');
+  const showTabBar =
+    !(activeTab === 'history' && historyStep !== 'list') &&
+    !(activeTab === 'contacts' && contactsStep !== 'list');
 
   return (
     <SafeAreaProvider>
@@ -240,6 +269,17 @@ export default function App() {
               )}
               {historyStep === 'outcome' && selectedEvaluation && (
                 <OutcomeScreen evaluation={selectedEvaluation} onSaved={handleOutcomeSaved} />
+              )}
+            </>
+          )}
+
+          {activeTab === 'contacts' && (
+            <>
+              {contactsStep === 'list' && (
+                <ContactsScreen onSelectContact={handleSelectContact} refreshTrigger={contactsRefresh} />
+              )}
+              {contactsStep === 'detail' && selectedContact && (
+                <ContactDetailScreen summary={selectedContact} />
               )}
             </>
           )}
