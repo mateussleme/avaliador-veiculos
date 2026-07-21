@@ -34,10 +34,22 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "BMW", model: "530e", discount: 0.25 }, // 25%
   { brand: "BMW", model: "530i", discount: 0.23 }, // 23%
   { brand: "BMW", model: "540i", discount: 0.23 }, // 23%
+  // Variantes automáticas antigas com sufixo "iA" grudado ("320iA", "328iA"...),
+  // mesmo carro do modelo sem "iA". A FIPE também usa "530i/iA"/"540i/iA" com
+  // barra, que já casam com "530i"/"540i" — aqui cobrimos só a grafia grudada.
+  { brand: "BMW", model: "118ia", discount: 0.18 }, // 18% (= 118i)
+  { brand: "BMW", model: "120ia", discount: 0.15 }, // 15% (= 120i)
+  { brand: "BMW", model: "320ia", discount: 0.15 }, // 15% (= 320i)
+  { brand: "BMW", model: "328ia", discount: 0.15 }, // 15% (= 328i)
+  { brand: "BMW", model: "330ia", discount: 0.18 }, // 18% (= 330i)
+  { brand: "BMW", model: "540ia", discount: 0.23 }, // 23% (= 540i)
   { brand: "BMW", model: "730li", discount: 0.3 }, // 30%
   { brand: "BMW", model: "745le", discount: 0.3 }, // 30%
   { brand: "BMW", model: "750li", discount: 0.3 }, // 30%
   { brand: "BMW", model: "750i", discount: 0.3 }, // 30%
+  // A FIPE grafa o 750Li como "750iL" / "750iLA" — mesmo carro do 750Li.
+  { brand: "BMW", model: "750il", discount: 0.3 }, // 30%
+  { brand: "BMW", model: "750ila", discount: 0.3 }, // 30%
   { brand: "BMW", model: "I4", discount: 0.3 }, // 30%
   { brand: "BMW", model: "M 135i", discount: 0.18 }, // 18%
   { brand: "BMW", model: "M 140i", discount: 0.18 }, // 18%
@@ -47,6 +59,16 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "BMW", model: "M 440i", discount: 0.18 }, // 18%
   { brand: "BMW", model: "M 760li", discount: 0.3 }, // 30%
   { brand: "BMW", model: "M 850i", discount: 0.35 }, // 35%
+  // A FIPE também grafa esses M sem espaço ("M140i", "M340i", "M760Li",
+  // "M850i"...). Mesmo carro, mesma taxa — sem estas entradas caíam em 20%.
+  { brand: "BMW", model: "M135i", discount: 0.18 }, // 18%
+  { brand: "BMW", model: "M140i", discount: 0.18 }, // 18%
+  { brand: "BMW", model: "M235i", discount: 0.18 }, // 18%
+  { brand: "BMW", model: "M240i", discount: 0.18 }, // 18%
+  { brand: "BMW", model: "M340i", discount: 0.18 }, // 18%
+  { brand: "BMW", model: "M440i", discount: 0.18 }, // 18%
+  { brand: "BMW", model: "M760li", discount: 0.3 }, // 30%
+  { brand: "BMW", model: "M850i", discount: 0.35 }, // 35%
   { brand: "BMW", model: "M2", discount: 0.2 }, // 20%
   { brand: "BMW", model: "M3", discount: 0.18 }, // 18%
   { brand: "BMW", model: "M4", discount: 0.18 }, // 18%
@@ -78,10 +100,19 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
 
   // Land Rover
   { brand: "Land Rover", model: "Defender", discount: 0.22 }, // 22%
+  // A FIPE abrevia Defender como "Def." e "Defe." (ex: "Def. 90 X-DY",
+  // "Defe. 110 X-DY", "Defe. 130 Outbound") — sem estas entradas essas
+  // versões caíam no padrão de 20%.
+  { brand: "Land Rover", model: "Def", discount: 0.22 }, // 22% — "Def. 90"
+  { brand: "Land Rover", model: "Defe", discount: 0.22 }, // 22% — "Defe. 110/130"
   { brand: "Land Rover", model: "Discovery", discount: 0.30 }, // 30%
   { brand: "Land Rover", model: "Discovery3", discount: 0.30 }, // 30%
   { brand: "Land Rover", model: "Discovery4", discount: 0.30 }, // 30%
   { brand: "Land Rover", model: "Discovery Sport", discount: 0.30 }, // 30%
+  // Discovery Sport abreviado pela FIPE: "Disc. Sp." e "Discov. Sp." — mesma
+  // taxa do Discovery Sport (30%). "sp" só casa junto de "disc"/"discov".
+  { brand: "Land Rover", model: "Disc Sp", discount: 0.30 }, // 30% — "Disc. Sp."
+  { brand: "Land Rover", model: "Discov Sp", discount: 0.30 }, // 30% — "Discov. Sp."
   { brand: "Land Rover", model: "Discov Metrop", discount: 0.28 }, // 28% — "Discov. Metrop." (FIPE abrevia)
   { brand: "Land Rover", model: "Range Rover", discount: 0.25 }, // 25%
   { brand: "Land Rover", model: "Range Rover Evoque", discount: 0.25 }, // 25%
@@ -207,6 +238,7 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Mercedez-Benz", model: "Gle 400d", discount: 0.28 }, // 28%
   { brand: "Mercedez-Benz", model: "Gle 43 Amg", discount: 0.28 }, // 28%
   { brand: "Mercedez-Benz", model: "Gle 450d", discount: 0.28 }, // 28%
+  { brand: "Mercedez-Benz", model: "Gle 450", discount: 0.28 }, // 28% — FIPE grafa "GLE-450 ... Diesel" (sem o "d")
   { brand: "Mercedez-Benz", model: "Gle 53 Amg", discount: 0.28 }, // 28%
   { brand: "Mercedez-Benz", model: "Gle 63 Amg", discount: 0.3 }, // 30%
   { brand: "Mercedez-Benz", model: "Gls 350", discount: 0.28 }, // 28%
@@ -215,6 +247,7 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Mercedez-Benz", model: "Gls 63 Amg", discount: 0.3 }, // 30%
   { brand: "Mercedez-Benz", model: "Metris", discount: 0.25 }, // 25%
   { brand: "Mercedez-Benz", model: "S 560", discount: 0.3 }, // 30%
+  { brand: "Mercedez-Benz", model: "S 560l", discount: 0.3 }, // 30% — FIPE grafa "S-560L" (o "L" gruda no número)
   { brand: "Mercedez-Benz", model: "S 580", discount: 0.3 }, // 30%
   { brand: "Mercedez-Benz", model: "S 63 Amg", discount: 0.3 }, // 30%
   { brand: "Mercedez-Benz", model: "S 65 Amg", discount: 0.3 }, // 30%
@@ -368,6 +401,7 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Porsche", model: "718", discount: 0.25 }, // 25%
   { brand: "Porsche", model: "911", discount: 0.25 }, // 25%
   { brand: "Porsche", model: "Cayenne", discount: 0.3 }, // 30%
+  { brand: "Porsche", model: "Cayene", discount: 0.3 }, // 30% — a FIPE tem um "Cayene" (typo, sem um "n")
   { brand: "Porsche", model: "Macan", discount: 0.2 }, // 20%
   { brand: "Porsche", model: "Panamera", discount: 0.25 }, // 25%
   { brand: "Porsche", model: "Taycan", discount: 0.3 }, // 30%
@@ -468,6 +502,9 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   // mecânica ("... GP3 2.0 Turbo 3p Aut.", "... 25K Edit. 2.0 Turbo 3p") —
   // ambas recebem 22% também, já que são a mesma versão John Works 2.0 Turbo.
   { brand: "Mini", model: "Cooper John Works 2.0 Turbo 3p", discount: 0.22 }, // 22%
+  // Edição especial JCW 2.0 Turbo 3p que a FIPE grafa "John.W.Pat.Moss"
+  // (abrevia "Works" para "W"), o que não casa com a entrada acima.
+  { brand: "Mini", model: "Cooper Pat Moss", discount: 0.22 }, // 22%
 
   // Jeep
   // Confirmado ao vivo na FIPE (marca "Jeep", código 29): todos os trims de
