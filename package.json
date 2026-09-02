@@ -7,15 +7,18 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "test": "npx tsx scripts/test-evaluation-engine.ts && npx tsx scripts/test-contact-matching.ts",
+    "export:web": "expo export --platform web && node scripts/pwa-postexport.js",
+    "test": "npx tsx scripts/test-evaluation-engine.ts && npx tsx scripts/test-contact-matching.ts && npx tsx scripts/test-date-filter.ts && npx tsx scripts/test-sale-suggestion.ts",
     "test:fipe": "npx tsx scripts/verify-discount-table.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@expo/metro-runtime": "~57.0.7",
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "^2.1.0",
+    "@sentry/react-native": "~7.11.0",
     "@supabase/supabase-js": "^2.45.4",
-    "expo": "57.0.4",
+    "expo": "^57.0.8",
     "expo-apple-authentication": "~57.0.0",
     "expo-auth-session": "^57.0.2",
     "expo-crypto": "~57.0.0",
@@ -26,9 +29,11 @@
     "expo-updates": "^57.0.6",
     "expo-web-browser": "~57.0.0",
     "react": "19.2.3",
+    "react-dom": "19.2.3",
     "react-native": "0.86.0",
     "react-native-safe-area-context": "~5.7.0",
-    "react-native-url-polyfill": "^2.0.0"
+    "react-native-url-polyfill": "^2.0.0",
+    "react-native-web": "^0.21.2"
   },
   "devDependencies": {
     "@types/react": "~19.2.4",
