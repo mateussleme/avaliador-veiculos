@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
   fetchBrands,
@@ -8,6 +8,7 @@ import {
   fetchYears,
   fetchYearsByBrand,
   FipeApiError,
+  formatFabModelYear,
   formatModelYear,
 } from '../api/fipeApi';
 import { fetchVehicleByPlate, FipeVersionMatch, PlateApiError, PlateLookupResult } from '../api/plateApi';
@@ -77,6 +78,12 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
   const [plateLoading, setPlateLoading] = useState(false);
   const [plateError, setPlateError] = useState<string | null>(null);
   const [plateResult, setPlateResult] = useState<PlateLookupResult | null>(null);
+
+  // Trava sincrona anti duplo-toque. O botao ja fica desabilitado por
+  // `plateLoading`, mas o `disabled` do Pressable so vale apos o re-render;
+  // dois toques no MESMO frame escapariam e disparariam duas consultas pagas.
+  // O ref e atualizado de forma sincrona, entao bloqueia essa corrida.
+  const plateInFlightRef = useRef(false);
 
   // Recarrega marcas sempre que o tipo de veículo muda.
   useEffect(() => {
@@ -178,19 +185,26 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
   const parsedPlate = useMemo(() => parsePlate(plateText), [plateText]);
 
   function handlePlateSearch() {
+    // Ja existe uma consulta em andamento: ignora o toque (anti duplo-toque).
+    if (plateInFlightRef.current) return;
+
     if (!parsedPlate) {
       setPlateError('Digite uma placa válida (ex: ABC1234 ou ABC1D23).');
       setPlateResult(null);
       return;
     }
 
+    plateInFlightRef.current = true;
     setPlateError(null);
     setPlateResult(null);
     setPlateLoading(true);
     fetchVehicleByPlate(parsedPlate)
       .then(setPlateResult)
       .catch((e) => setPlateError(e instanceof PlateApiError ? e.message : 'Erro ao consultar o veículo.'))
-      .finally(() => setPlateLoading(false));
+      .finally(() => {
+        plateInFlightRef.current = false;
+        setPlateLoading(false);
+      });
   }
 
   const resolvedKind = mode === 'manual' ? kind : plateResult?.kind ?? null;
@@ -300,7 +314,7 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
               label="Buscar veículo"
               onPress={handlePlateSearch}
               loading={plateLoading}
-              disabled={!plateText}
+              disabled={!plateText || plateLoading}
               style={styles.searchButton}
             />
           </Card>
@@ -318,7 +332,7 @@ export function SearchScreen({ onContinue }: SearchScreenProps) {
                 {plateResult.vehicle.brand} {plateResult.vehicle.model}
               </Text>
               <Text style={styles.vehicleMeta}>
-                {KIND_LABEL[plateResult.kind]} · {formatModelYear(plateResult.vehicle)} ·{' '}
+                {KIND_LABEL[plateResult.kind]} · {formatFabModelYear(plateResult.vehicle)} ·{' '}
                 {plateResult.vehicle.fuel} · ref. {plateResult.vehicle.referenceMonth}
               </Text>
               <Text style={styles.priceValue}>{plateResult.vehicle.priceLabel}</Text>

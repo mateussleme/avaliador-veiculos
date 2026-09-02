@@ -1,4 +1,4 @@
-import { AdjustmentLine, EvaluationInput, EvaluationResult, VehicleKind } from './types';
+import { AdjustmentLine, EvaluationInput, EvaluationResult, FipeVehicleInfo, VehicleKind } from './types';
 import { DEFAULT_DISCOUNT_PERCENT, DiscountLookupResult, lookupDiscount } from './discountTable';
 
 // ---- Constantes fixas do motor de avaliação ----
@@ -17,8 +17,74 @@ const REPAINT_WHEEL_COST  = 300;   // R$300 por roda para pintar
 // Repasse: percentual do valor final de oferta
 const REPASSE_PERCENT = 0.92;
 
-// Bônus por pneu novo (carro: 4 × 0.5% = +2% max; moto: 2 × 1.0% = +2% max)
-const PER_TIRE_BONUS_PERCENT: Record<VehicleKind, number> = {
+// Unidade de arredondamento de dinheiro. Todos os valores em reais sao
+// arredondados para o multiplo mais proximo desta unidade. Trocar aqui muda o
+// app inteiro (ex: 500 faria 13.478 -> 13.500 em vez de 13.000).
+export const MONEY_ROUND_UNIT = 1000;
+
+// Arredondamento "metade para cima" (half up) ao MONEY_ROUND_UNIT. Em empate
+// vai para longe do zero. Ex (unit 1000): 13.478 -> 13.000, 13.500 -> 14.000,
+// -13.500 -> -14.000. Mantem tela, banco e calculos com o mesmo numero redondo.
+export function roundMoney(value: number): number {
+  const u = MONEY_ROUND_UNIT;
+  return Math.sign(value) * Math.round(Math.abs(value) / u) * u;
+}
+
+// ---- Sugestao de VENDA ----
+// A venda e o custo dividido por um fator (markup embutido): 0,85 para carro de
+// showroom (~17,6% de margem bruta) e 0,95 para repasse (~5%).
+// So o REPASSE tem limite de margem; o SHOWROOM usa a divisao direta, sem piso
+// nem teto. O piso do repasse depende do tipo: R$2k carro, R$1k moto.
+export const SALE_SHOWROOM_DIVISOR = 0.85;
+export const SALE_REPASSE_DIVISOR = 0.95;
+export const SALE_MARGIN_MIN_CAR = 2000;   // piso de lucro do repasse - carro (R$)
+export const SALE_MARGIN_MIN_MOTO = 1000;  // piso de lucro do repasse - moto (R$)
+export const SALE_MARGIN_MAX = 25000;      // teto de lucro do repasse (R$)
+
+export interface SaleSuggestion {
+  sale: number;    // valor de venda sugerido (R$)
+  margin: number;  // margem embutida (R$) = sale - custo, ja arredondada
+}
+
+export interface SaleSuggestions {
+  showroom: SaleSuggestion;
+  repasse: SaleSuggestion;
+}
+
+// Venda = custo + margem, onde margem = custo/divisor - custo. Se clamp for
+// passado (repasse), a margem e limitada entre clamp.min e clamp.max. A venda e
+// arredondada (roundMoney) e a margem exibida = venda - custo, entao os dois
+// batem. Retorna zeros para custo invalido (<= 0), evitando divisao por zero.
+export function computeSaleSuggestion(
+  cost: number,
+  divisor: number,
+  clamp?: { min: number; max: number }
+): SaleSuggestion {
+  if (!(cost > 0)) return { sale: 0, margin: 0 };
+  const rawMargin = cost / divisor - cost;
+  const margin = clamp ? Math.min(Math.max(rawMargin, clamp.min), clamp.max) : rawMargin;
+  const sale = roundMoney(cost + margin);
+  return { sale, margin: sale - cost };
+}
+
+// Sugestoes de venda: showroom (sobre a sugestao de compra, SEM limite) e
+// repasse (sobre o valor de repasse, COM piso/teto). O piso do repasse varia
+// por tipo de veiculo (moto tem piso menor).
+export function saleSuggestions(
+  finalOfferValue: number,
+  repasseValue: number,
+  kind: VehicleKind
+): SaleSuggestions {
+  const repasseMin = kind === 'motorcycles' ? SALE_MARGIN_MIN_MOTO : SALE_MARGIN_MIN_CAR;
+  return {
+    showroom: computeSaleSuggestion(finalOfferValue, SALE_SHOWROOM_DIVISOR),
+    repasse:  computeSaleSuggestion(repasseValue, SALE_REPASSE_DIVISOR, { min: repasseMin, max: SALE_MARGIN_MAX }),
+  };
+}
+
+// Penalidade por pneu que PRECISA TROCAR (carro: 4 × 0.5% = -2% max; moto: 2 × 1.0% = -2% max).
+// Cada pneu a trocar desconta do valor (gasto imediato com a troca).
+const PER_TIRE_PENALTY_PERCENT: Record<VehicleKind, number> = {
   cars: 0.5,
   motorcycles: 1.0,
 };
@@ -42,12 +108,13 @@ const MILEAGE_ABOVE_MAX_PERCENT = -7;
 
 const MIN_AGE_YEARS = 1;
 
-// Faixa dos ajustes variáveis — usada pelo medidor visual
+// Faixa dos ajustes variáveis — usada pelo medidor visual.
+// Pior caso: km alto, repintura, sem revisão e TODOS os pneus para trocar.
+// Melhor caso: km baixo + revisão (pneus agora só descontam, nunca somam).
 export const ADJUSTMENT_RANGE = {
-  min: MILEAGE_ABOVE_MAX_PERCENT + REPAINT_PERCENT + DEALER_SERVICE_NO_PERCENT, // -13.5%
-  max: MILEAGE_PER_YEAR_TIERS[0].percent
-    + PER_TIRE_BONUS_PERCENT.cars * MAX_NEW_TIRES.cars
-    + DEALER_SERVICE_YES_PERCENT,  // +9%
+  min: MILEAGE_ABOVE_MAX_PERCENT + REPAINT_PERCENT + DEALER_SERVICE_NO_PERCENT
+    - PER_TIRE_PENALTY_PERCENT.cars * MAX_NEW_TIRES.cars, // -15.5%
+  max: MILEAGE_PER_YEAR_TIERS[0].percent + DEALER_SERVICE_YES_PERCENT, // +5%
 };
 
 function clamp(v: number, min: number, max: number) {
@@ -163,22 +230,22 @@ function buildMileageLine(
 function buildTireLine(kind: VehicleKind, hasTires: boolean, newTireCount: number): AdjustmentLine {
   if (!hasTires) {
     return {
-      label: 'Sem pneus novos',
-      detail: 'Nenhum bônus aplicado.',
+      label: 'Pneus não precisam trocar',
+      detail: 'Nenhum desconto aplicado.',
       percent: 0,
       severity: 'neutral',
     };
   }
   const max = MAX_NEW_TIRES[kind];
   const count = clamp(Math.round(newTireCount), 0, max);
-  const percent = PER_TIRE_BONUS_PERCENT[kind] * count;
+  const percent = -(PER_TIRE_PENALTY_PERCENT[kind] * count);
   return {
-    label: count > 0 ? `${count} de ${max} pneus novos` : 'Pneus novos — quantidade não informada',
+    label: count > 0 ? `${count} de ${max} pneus para trocar` : 'Troca de pneus — quantidade não informada',
     detail: count > 0
-      ? 'Reduz um gasto imediato que o próximo comprador teria com troca de pneus.'
-      : 'Informe a quantidade para aplicar o bônus.',
+      ? 'Desconto pelo gasto imediato com a troca dos pneus.'
+      : 'Informe a quantidade para aplicar o desconto.',
     percent,
-    severity: count > 0 ? 'good' : 'neutral',
+    severity: count > 0 ? 'danger' : 'neutral',
   };
 }
 
@@ -381,34 +448,120 @@ export function evaluateVehicle(input: EvaluationInput): EvaluationResult {
   );
   const armorAdjustmentValue = armorLine ? -(armorLine.amountDeduction ?? 0) : 0;
 
+  // 3c. Gastos adicionais previstos (R$) informados pelo avaliador (descontam).
+  const additionalCosts = Math.max(0, Math.round(input.additionalCosts ?? 0));
+  const additionalCostsLine: AdjustmentLine | null = additionalCosts > 0
+    ? {
+        label: `Gastos adicionais — ${'R$ ' + additionalCosts.toLocaleString('pt-BR')}`,
+        detail: 'Custo extra previsto pelo avaliador (peças, funilaria, documentação, etc.).',
+        percent: 0,
+        amountDeduction: additionalCosts,
+        severity: 'danger',
+      }
+    : null;
+
+  // 3d. Opcionais / valorizacao (R$) — SOMAM na oferta (a FIPE nao distingue).
+  const optionalsValue = Math.max(0, Math.round(input.optionalsValue ?? 0));
+  const optionalsLine: AdjustmentLine | null = optionalsValue > 0
+    ? {
+        label: `Opcionais / valorização — ${'R$ ' + optionalsValue.toLocaleString('pt-BR')}`,
+        detail: 'Valor agregado por opcionais não previstos pela FIPE (teto solar, acabamento/pintura especial, etc.).',
+        percent: 0,
+        amountDeduction: -optionalsValue, // negativo = soma na oferta
+        severity: 'good',
+      }
+    : null;
+
   const lines: AdjustmentLine[] = [
     ...percentLines,
     ...(armorLine ? [armorLine] : []),
     ...(prepLine ? [prepLine] : []),
+    ...(additionalCostsLine ? [additionalCostsLine] : []),
+    ...(optionalsLine ? [optionalsLine] : []),
   ];
 
-  // 4. Valor final e repasse
-  const finalOfferValue = Math.max(0, estimatedValue - preparationCost + armorAdjustmentValue);
-  const repasseValue = finalOfferValue * REPASSE_PERCENT;
+  // 4. Valor final e repasse (arredondados; o repasse deriva do final ja inteiro)
+  const finalOfferValue = roundMoney(Math.max(0, estimatedValue - preparationCost - additionalCosts + optionalsValue + armorAdjustmentValue));
+  const repasseValue = roundMoney(finalOfferValue * REPASSE_PERCENT);
 
   let positionLabel: EvaluationResult['positionLabel'] = 'No padrão';
   if (adjustmentPercent <= -0.4) positionLabel = 'Abaixo do padrão';
   if (adjustmentPercent >= 0.4) positionLabel = 'Acima do padrão';
 
   return {
-    baseValue: input.vehicle.priceValue,
+    baseValue: roundMoney(input.vehicle.priceValue),
     baseDiscountPercent: discountLookup.discountPercent,
     discountSource: discountLookup.source,
     discountMatchedModel: discountLookup.matchedModel,
-    standardValue,
+    standardValue: roundMoney(standardValue),
     adjustmentPercent,
-    estimatedValue,
+    estimatedValue: roundMoney(estimatedValue),
+    // preparationCost e armorAdjustmentValue NAO sao arredondados ao milhar:
+    // sao valores de regra (ex: R$800/peca, faixas de blindagem) que aparecem
+    // na explicacao "como chegamos nesse valor" e ficariam incorretos.
     preparationCost,
+    additionalCosts,
+    optionalsValue,
     armorAdjustmentValue,
     finalOfferValue,
     repasseValue,
     lines,
     positionLabel,
     mileageKm: input.currentMileageKm,
+  };
+}
+
+// ---- Recalculo ao TROCAR a versao FIPE de uma avaliacao ja salva ----
+// So o veiculo muda (preco/nome), entao recalculamos o que depende dele:
+// desconto (nome pode casar outra faixa), valor padrao, estimado e blindagem
+// (que depende do preco). O ajuste % (km/pneus/revisao/repintura) e o custo de
+// preparacao NAO mudam com a versao — vem salvos e sao reaproveitados. Assim
+// nao precisamos das pecas/rodas de repintura (que nao ficam salvas).
+export interface VersionRecompute {
+  baseValue: number;
+  baseDiscountPercent: number;
+  discountSource: 'table' | 'default';
+  discountMatchedModel?: string;
+  standardValue: number;
+  adjustmentPercent: number;
+  estimatedValue: number;
+  armorAdjustmentValue: number;
+  finalOfferValue: number;
+  repasseValue: number;
+}
+
+export function recomputeForNewVehicle(args: {
+  vehicle: FipeVehicleInfo;
+  adjustmentPercent: number;   // salvo — nao muda com a versao
+  preparationCost: number;     // salvo — custo fisico, nao muda com a versao
+  additionalCosts: number;     // salvo — gastos adicionais, nao mudam com a versao
+  optionalsValue: number;      // salvo — opcionais/valorizacao, nao mudam com a versao
+  isArmored: boolean;
+  delaminatedWindowCount: number;
+}): VersionRecompute {
+  const { vehicle, adjustmentPercent, preparationCost, additionalCosts, optionalsValue, isArmored, delaminatedWindowCount } = args;
+
+  const discount = lookupDiscount(vehicle.brand, vehicle.model);
+  const standardValue = vehicle.priceValue * (1 - discount.discount);
+  const estimatedValue = standardValue * (1 + adjustmentPercent / 100);
+
+  // Blindagem recalculada com o NOVO preco/ano (as faixas dependem do preco).
+  const armorLine = buildArmorLine(isArmored, vehicle.modelYear, vehicle.priceValue, delaminatedWindowCount);
+  const armorAdjustmentValue = armorLine ? -(armorLine.amountDeduction ?? 0) : 0;
+
+  const finalOfferValue = roundMoney(Math.max(0, estimatedValue - preparationCost - Math.max(0, additionalCosts) + Math.max(0, optionalsValue) + armorAdjustmentValue));
+  const repasseValue = roundMoney(finalOfferValue * REPASSE_PERCENT);
+
+  return {
+    baseValue: roundMoney(vehicle.priceValue),
+    baseDiscountPercent: discount.discountPercent,
+    discountSource: discount.source,
+    discountMatchedModel: discount.matchedModel,
+    standardValue: roundMoney(standardValue),
+    adjustmentPercent,
+    estimatedValue: roundMoney(estimatedValue),
+    armorAdjustmentValue,
+    finalOfferValue,
+    repasseValue,
   };
 }

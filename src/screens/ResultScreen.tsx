@@ -4,10 +4,12 @@ import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
 import { GaugeBar } from '../components/GaugeBar';
 import { formatModelYear } from '../api/fipeApi';
-import { ADJUSTMENT_RANGE } from '../domain/evaluationEngine';
+import { ADJUSTMENT_RANGE, saleSuggestions } from '../domain/evaluationEngine';
 import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 import { AdjustmentSeverity, EvaluationInput, EvaluationResult, FipeVehicleInfo, VehicleKind } from '../domain/types';
-import { saveEvaluation } from '../services/evaluationService';
+import { saveEvaluation, linkEvaluationContact } from '../services/evaluationService';
+import { ContactPicker } from '../components/ContactPicker';
+import { Contact } from '../types/database';
 
 interface ResultScreenProps {
   kind: VehicleKind;
@@ -18,6 +20,9 @@ interface ResultScreenProps {
   sessionToken?: string | null; // JWT do Supabase — null quando REQUIRE_AUTH=false
   onRestart: () => void;
   onSaved?: (evaluationId: string) => void;
+  // Presente apenas quando a placa retornou mais de uma versao FIPE: permite
+  // voltar a lista de versoes e recalcular sem refazer o formulario.
+  onChangeVersion?: () => void;
 }
 
 function formatCurrency(value: number): string {
@@ -51,12 +56,19 @@ function severityColor(severity: AdjustmentSeverity) {
   }
 }
 
-export function ResultScreen({ kind, vehicle, input, result, plate, sessionToken, onRestart, onSaved }: ResultScreenProps) {
+export function ResultScreen({ kind, vehicle, input, result, plate, sessionToken, onRestart, onSaved, onChangeVersion }: ResultScreenProps) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [offerText, setOfferText] = useState('');
+  // Contato vinculado ja na avaliacao (opcional) — evita ter que ir ao historico.
+  const [contact, setContact] = useState<Contact | null>(null);
   // Evita recalcular o parse várias vezes por render (era chamado 4x na dica).
   const offerNumber = useMemo(() => parseMoney(offerText), [offerText]);
+  // Sugestoes de venda (showroom e repasse), derivadas dos valores ja calculados.
+  const sale = useMemo(
+    () => saleSuggestions(result.finalOfferValue, result.repasseValue, kind),
+    [result.finalOfferValue, result.repasseValue, kind]
+  );
 
   async function handleSave() {
     if (!sessionToken) {
@@ -70,6 +82,8 @@ export function ResultScreen({ kind, vehicle, input, result, plate, sessionToken
     setSaving(true);
     try {
       const id = await saveEvaluation({ kind, vehicle, input, result, plate, offerValue: parseMoney(offerText) });
+      // Se um contato foi escolhido, vincula agora (cria desfecho pendente).
+      if (contact) await linkEvaluationContact(id, contact.id);
       setSaved(true);
       onSaved?.(id);
     } catch (err: any) {
@@ -181,6 +195,24 @@ export function ResultScreen({ kind, vehicle, input, result, plate, sessionToken
         )}
       </Card>
 
+      <Card style={styles.saleCard}>
+        <SectionLabel>Sugestão de venda</SectionLabel>
+        <View style={styles.saleRow}>
+          <View style={styles.saleInfo}>
+            <Text style={styles.saleLabel}>Showroom</Text>
+            <Text style={styles.saleMargin}>margem {formatCurrency(sale.showroom.margin)}</Text>
+          </View>
+          <Text style={styles.saleValue}>{formatCurrency(sale.showroom.sale)}</Text>
+        </View>
+        <View style={[styles.saleRow, styles.saleRowLast]}>
+          <View style={styles.saleInfo}>
+            <Text style={styles.saleLabel}>Repasse</Text>
+            <Text style={styles.saleMargin}>margem {formatCurrency(sale.repasse.margin)}</Text>
+          </View>
+          <Text style={styles.saleValue}>{formatCurrency(sale.repasse.sale)}</Text>
+        </View>
+      </Card>
+
       <Card style={styles.offerCard}>
         <SectionLabel>Sua oferta de compra (opcional)</SectionLabel>
         <TextInput
@@ -233,6 +265,16 @@ export function ResultScreen({ kind, vehicle, input, result, plate, sessionToken
         </Text>
       </Card>
 
+      {!saved ? (
+        <Card style={styles.offerCard}>
+          <SectionLabel>Contato (opcional)</SectionLabel>
+          <ContactPicker selected={contact} onChange={setContact} />
+          <Text style={styles.offerHint}>
+            Vincule ou crie um contato para esta cotação — fica salvo junto da avaliação, sem precisar ir ao histórico.
+          </Text>
+        </Card>
+      ) : null}
+
       {saved ? (
         <Card style={styles.savedCard}>
           <Text style={styles.savedText}>Avaliação salva no histórico</Text>
@@ -245,6 +287,10 @@ export function ResultScreen({ kind, vehicle, input, result, plate, sessionToken
           style={styles.saveButton}
         />
       )}
+
+      {onChangeVersion ? (
+        <Button label="Alterar versão" variant="secondary" onPress={onChangeVersion} style={styles.restartButton} />
+      ) : null}
 
       <Button label="Nova avaliação" variant="secondary" onPress={onRestart} style={styles.restartButton} />
     </ScrollView>
@@ -376,6 +422,41 @@ const styles = StyleSheet.create({
     fontSize: type.h2.fontSize,
     fontWeight: type.h2.fontWeight,
     color: colors.textPrimary,
+    fontFamily: fontFamily.spaceGrotesk,
+  },
+  saleCard: {
+    marginBottom: spacing.lg,
+  },
+  saleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  saleRowLast: {
+    borderBottomWidth: 0,
+  },
+  saleInfo: {
+    flex: 1,
+  },
+  saleLabel: {
+    fontSize: type.body.fontSize,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    fontFamily: fontFamily.spaceGrotesk,
+  },
+  saleMargin: {
+    fontSize: type.caption.fontSize,
+    color: colors.textTertiary,
+    marginTop: 2,
+    fontFamily: fontFamily.inter,
+  },
+  saleValue: {
+    fontSize: type.h2.fontSize,
+    fontWeight: '700',
+    color: colors.ink,
     fontFamily: fontFamily.spaceGrotesk,
   },
   offerCard: {

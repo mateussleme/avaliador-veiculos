@@ -38,10 +38,21 @@
       "expo-secure-store",
       "expo-font",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "organization": "autovalor-gq",
+          "project": "react-native"
+        }
+      ],
+      "@sentry/react-native"
     ],
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
     },
     "newArchEnabled": true,
     "runtimeVersion": {

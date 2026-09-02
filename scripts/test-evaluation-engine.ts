@@ -11,8 +11,10 @@
  * Os valores esperados foram calculados à mão a partir das regras:
  *   standard  = FIPE × (1 - desconto)
  *   estimated = standard × (1 + ajuste%)
- *   final     = estimated - preparação + blindagem   (mínimo 0)
- *   repasse   = final × 0,92
+ *   final     = arredonda(estimated - preparação + blindagem)   (mínimo 0)
+ *   repasse   = arredonda(final × 0,92)
+ * Arredondamento: ao milhar mais proximo (roundMoney), half up. Por isso o
+ * repasse usa o final JA arredondado.
  */
 import { evaluateVehicle } from '../src/domain/evaluationEngine';
 import { EvaluationInput, FipeVehicleInfo, VehicleKind } from '../src/domain/types';
@@ -41,6 +43,8 @@ interface Opts {
   repaintWheels?: number;
   armored?: boolean;
   delaminated?: number;
+  additionalCosts?: number;
+  optionalsValue?: number;
 }
 
 function input(v: FipeVehicleInfo, o: Opts): EvaluationInput {
@@ -59,6 +63,8 @@ function input(v: FipeVehicleInfo, o: Opts): EvaluationInput {
     isArmored3A: false,
     hasDelamination: (o.delaminated ?? 0) > 0,
     delaminatedWindowCount: o.delaminated ?? 0,
+    additionalCosts: o.additionalCosts ?? 0,
+    optionalsValue: o.optionalsValue ?? 0,
   };
 }
 
@@ -76,33 +82,46 @@ const cases: [string, EvaluationInput, Expected][] = [
     'Base: sem extras, sem revisão (km na média, -4% revisão, +1% km)',
     // FIPE 100k, 2 anos, 24.000 km => 12.000 km/ano => +1% | revisão não => -4%
     input(vehicle('MarcaTeste', 'ModeloTeste', 100000, 2), { km: 24000 }),
-    { adjustmentPercent: -3, standardValue: 80000, finalOfferValue: 77600, repasseValue: 71392, baseDiscountPercent: 20 },
+    { adjustmentPercent: -3, standardValue: 78000, finalOfferValue: 76000, repasseValue: 70000, baseDiscountPercent: 22 },
   ],
   [
-    'Tudo a favor: 4 pneus (+2%), revisão (+1%), km baixo (+4%)',
-    // 12.000 km em 2 anos => 6.000 km/ano => +4%
+    'Mix: 4 pneus para trocar (-2%), revisão (+1%), km baixo (+4%)',
+    // 12.000 km em 2 anos => 6.000 km/ano => +4% | 4 pneus para trocar => -2% | revisão => +1%
     input(vehicle('MarcaTeste', 'ModeloTeste', 100000, 2), { km: 12000, tires: 4, dealer: true }),
-    { adjustmentPercent: 7, standardValue: 80000, finalOfferValue: 85600, repasseValue: 78752 },
+    { adjustmentPercent: 3, standardValue: 78000, finalOfferValue: 80000, repasseValue: 74000 },
   ],
   [
     'Repintura: -2,5% e custo de preparação (2 peças + 1 roda = R$1.900)',
     input(vehicle('MarcaTeste', 'ModeloTeste', 100000, 2), { km: 24000, dealer: true, repaintPieces: 2, repaintWheels: 1 }),
-    { adjustmentPercent: -0.5, standardValue: 80000, finalOfferValue: 77700, repasseValue: 71484 },
+    { adjustmentPercent: -0.5, standardValue: 78000, finalOfferValue: 76000, repasseValue: 70000 },
   ],
   [
     'Blindado novo (1 ano, FIPE 150k): soma R$40.000 na oferta',
     input(vehicle('MarcaTeste', 'ModeloTeste', 150000, 1), { km: 12000, dealer: true, armored: true }),
-    { adjustmentPercent: 2, standardValue: 120000, finalOfferValue: 162400, repasseValue: 149408 },
+    { adjustmentPercent: 2, standardValue: 117000, finalOfferValue: 159000, repasseValue: 146000 },
   ],
   [
     'Blindado velho (10 anos) com 2 vidros delaminados: -15.000 -12.000',
     input(vehicle('MarcaTeste', 'ModeloTeste', 150000, 10), { km: 120000, armored: true, delaminated: 2 }),
-    { adjustmentPercent: -3, standardValue: 120000, finalOfferValue: 89400, repasseValue: 82248 },
+    { adjustmentPercent: -3, standardValue: 117000, finalOfferValue: 86000, repasseValue: 79000 },
   ],
   [
-    'Moto: 2 pneus novos valem +2% (máximo da categoria)',
+    'Moto: 2 pneus para trocar valem -2% (máximo da categoria)',
+    // km 12.000/ano => +1% | 2 pneus para trocar => -2% | revisão => +1% | total 0%
     input(vehicle('MarcaTeste', 'ModeloTeste', 100000, 2), { kind: 'motorcycles', km: 24000, tires: 2, dealer: true }),
-    { adjustmentPercent: 4, standardValue: 80000, finalOfferValue: 83200, repasseValue: 76544 },
+    { adjustmentPercent: 0, standardValue: 78000, finalOfferValue: 78000, repasseValue: 72000 },
+  ],
+  [
+    'Gastos adicionais de R$5.000 descontam da oferta (km+1, revisão+1)',
+    // padrão 22% -> standard 78.000; ajuste +2% -> estimado 79.560; -5.000 -> 75.000
+    input(vehicle('MarcaTeste', 'ModeloTeste', 100000, 2), { km: 24000, dealer: true, additionalCosts: 5000 }),
+    { adjustmentPercent: 2, standardValue: 78000, finalOfferValue: 75000, repasseValue: 69000 },
+  ],
+  [
+    'Opcionais de R$15.000 somam na oferta (km+1, revisão+1)',
+    // padrão 22% -> standard 78.000; ajuste +2% -> estimado 79.560; +15.000 -> 94.560 -> 95.000
+    input(vehicle('MarcaTeste', 'ModeloTeste', 100000, 2), { km: 24000, dealer: true, optionalsValue: 15000 }),
+    { adjustmentPercent: 2, standardValue: 78000, finalOfferValue: 95000, repasseValue: 87000 },
   ],
   [
     'Oferta nunca fica negativa: preparação maior que o valor',
@@ -112,13 +131,13 @@ const cases: [string, EvaluationInput, Expected][] = [
   [
     'Desconto da tabela: BMW X5 usa 25% (não o padrão de 20%)',
     input(vehicle('BMW', 'X5 xDrive30e', 100000, 2), { km: 24000, dealer: true }),
-    { adjustmentPercent: 2, standardValue: 75000, finalOfferValue: 76500, repasseValue: 70380, baseDiscountPercent: 25 },
+    { adjustmentPercent: 2, standardValue: 75000, finalOfferValue: 77000, repasseValue: 71000, baseDiscountPercent: 25 },
   ],
   [
     'KM relativa à média do modelo: Audi (8.000 km/ano) com 10.000 km/ano = -1%',
     // Mesmo km que daria +1% num modelo de média 12.000 vira -1% aqui.
     input(vehicle('Audi', 'Q8 Perf.Black 3.0 TFSI', 100000, 1), { km: 10000, dealer: true }),
-    { adjustmentPercent: 0, standardValue: 72000, finalOfferValue: 72000, repasseValue: 66240, baseDiscountPercent: 28 },
+    { adjustmentPercent: 0, standardValue: 72000, finalOfferValue: 72000, repasseValue: 66000, baseDiscountPercent: 28 },
   ],
 ];
 

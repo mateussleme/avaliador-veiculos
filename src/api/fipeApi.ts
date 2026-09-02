@@ -167,4 +167,19 @@ export function formatModelYear(vehicle: Pick<FipeVehicleInfo, 'modelYear' | 'is
   return String(vehicle.modelYear);
 }
 
+// Exibe "fabricacao/modelo" (ex: "2022/2023") quando o ano de fabricacao esta
+// disponivel — mostra sempre os dois, mesmo iguais (2022/2022), para dar
+// certeza do veiculo. Sem ano de fabricacao (busca manual) ou 0km, cai no
+// formato padrao de ano-modelo.
+export function formatFabModelYear(
+  vehicle: Pick<FipeVehicleInfo, 'modelYear' | 'isZeroKm' | 'manufactureYear'>
+): string {
+  const modelYearLabel = formatModelYear(vehicle);
+  if (vehicle.isZeroKm || vehicle.modelYear === 32000) return modelYearLabel;
+  if (vehicle.manufactureYear && vehicle.manufactureYear > 0) {
+    return `${vehicle.manufactureYear}/${vehicle.modelYear}`;
+  }
+  return modelYearLabel;
+}
+
 export { FipeApiError };

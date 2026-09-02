@@ -46,15 +46,29 @@ export async function fetchVehicleByPlate(
     headers['Authorization'] = `Bearer ${session.access_token}`;
   }
 
+  // Timeout de rede do lado do app: se a conexao app<->backend cair, o fetch
+  // pode ficar pendurado indefinidamente (o timeout do backend so cobre a
+  // etapa backend<->APIBrasil). 25s da margem sobre o timeout de 20s do
+  // backend, entao no caminho normal e o backend que responde primeiro; o
+  // abort so dispara quando a rede realmente travou.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25000);
+
   let response: Response;
   try {
     response = await fetch(`${BACKEND_URL}/api/plate-lookup`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ placa: parsed.normalized }),
+      signal: controller.signal,
     });
-  } catch {
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new PlateApiError('A consulta demorou demais. Verifique sua internet e tente novamente.');
+    }
     throw new PlateApiError('Não foi possível conectar ao servidor. Verifique sua internet.');
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   const data = await response.json().catch(() => ({}));
@@ -63,6 +77,9 @@ export async function fetchVehicleByPlate(
   if (response.status === 402) throw new PlateApiError('Sem créditos no serviço de consulta. Entre em contato com o suporte.');
   if (response.status === 429) throw new PlateApiError(data?.error ?? 'Limite de consultas atingido. Aguarde e tente novamente.');
   if (response.status === 404) throw new PlateApiError('Veículo não encontrado para essa placa.');
+  if (response.status === 502 || response.status === 503 || response.status === 504) {
+  throw new PlateApiError('Consulta por placa temporariamente indisponível (serviço externo fora do ar). Tente buscar por marca, modelo e ano.');
+  }
   if (!response.ok)            throw new PlateApiError(data?.error ?? 'Erro ao consultar o veículo.');
 
   const vehicle = data?.vehicle;

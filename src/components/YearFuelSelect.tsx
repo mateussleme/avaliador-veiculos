@@ -30,9 +30,19 @@ const FUEL_LABEL: Record<string, string> = {
   eletrico: 'Elétrico',
 };
 
+const KNOWN_FUELS = new Set(FUEL_ORDER);
+
+function normalizeWord(w: string): string {
+  return w.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+// Combustível pela ULTIMA palavra do nome — mas so se for um combustivel
+// conhecido. Algumas listas (ex: motos) trazem o nome so com o ano ("2026"),
+// sem combustivel; nesses casos retornamos 'default' para nao virar um grupo
+// por ano (bug: cada ano aparecia como um "combustivel").
 function fuelKey(name: string): string {
-  const last = name.trim().split(/\s+/).pop() ?? '';
-  return last.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const last = normalizeWord(name.trim().split(/\s+/).pop() ?? '');
+  return KNOWN_FUELS.has(last) ? last : 'default';
 }
 
 // "2025-1" -> 2025, "32000-5" -> 32000 (0km ordena no topo, descendente).
@@ -41,10 +51,13 @@ function yearNum(code: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-// "2025 Gasolina" -> "2025"; "0 km Gasolina" -> "0 km".
+// "2025 Gasolina" -> "2025"; "0 km Gasolina" -> "0 km"; "2026" -> "2026".
+// So remove a ultima palavra se ela for um combustivel conhecido (senao, em
+// listas sem combustivel, "0 km" viraria "0" e "2026" sumiria).
 function yearOnlyLabel(name: string): string {
   const parts = name.trim().split(/\s+/);
-  parts.pop();
+  const last = normalizeWord(parts[parts.length - 1] ?? '');
+  if (KNOWN_FUELS.has(last)) parts.pop();
   return parts.join(' ') || name;
 }
 
@@ -86,12 +99,16 @@ export function YearFuelSelect({
   const groups = useMemo(() => buildFuelGroups(options), [options]);
   const isDisabled = disabled || loading || options.length === 0;
 
+  // Um unico combustivel (ex: motos, que so tem gasolina): nao faz sentido
+  // pedir para escolher combustivel — vai direto para os anos.
+  const singleFuel = groups.length === 1;
   const activeGroup = groups.find((g) => g.key === fuel) ?? null;
 
   function openModal() {
     if (isDisabled) return;
-    // Se já há um ano escolhido, abre direto na lista do combustível dele.
-    setFuel(value ? fuelKey(value.name) : null);
+    // Com um combustivel so, abre direto na lista de anos. Se ja ha um ano
+    // escolhido, abre na lista do combustivel dele; senao, no passo 1.
+    setFuel(singleFuel ? groups[0].key : value ? fuelKey(value.name) : null);
     setOpen(true);
   }
 
@@ -122,7 +139,7 @@ export function YearFuelSelect({
       <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
         <View style={styles.modalRoot}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{activeGroup ? activeGroup.label : label}</Text>
+            <Text style={styles.modalTitle}>{activeGroup && !singleFuel ? activeGroup.label : label}</Text>
             <Pressable onPress={() => setOpen(false)} hitSlop={12}>
               <Text style={styles.modalClose}>Fechar</Text>
             </Pressable>
@@ -145,9 +162,11 @@ export function YearFuelSelect({
           ) : (
             // ---- Passo 2: escolher o ano daquele combustível ----
             <>
-              <Pressable onPress={() => setFuel(null)} style={styles.backRow} hitSlop={8}>
-                <Text style={styles.backText}>‹ Trocar combustível</Text>
-              </Pressable>
+              {!singleFuel ? (
+                <Pressable onPress={() => setFuel(null)} style={styles.backRow} hitSlop={8}>
+                  <Text style={styles.backText}>‹ Trocar combustível</Text>
+                </Pressable>
+              ) : null}
               <FlatList
                 data={activeGroup.years}
                 keyExtractor={(item) => item.code}

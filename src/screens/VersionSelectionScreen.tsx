@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FipeVersionMatch } from '../api/plateApi';
-import { formatModelYear } from '../api/fipeApi';
+import { formatFabModelYear } from '../api/fipeApi';
 import { Button } from '../components/Button';
 import { Card, SectionLabel } from '../components/Card';
 import { VehicleKind } from '../domain/types';
@@ -48,8 +48,8 @@ export function VersionSelectionScreen({
       </Card>
 
       <SectionLabel>
-        {allMatches.length} versão{allMatches.length !== 1 ? 'ões' : ''} encontrada
-        {allMatches.length !== 1 ? 's' : ''} para essa placa
+        {allMatches.length}{' '}
+        {allMatches.length !== 1 ? 'versões encontradas' : 'versão encontrada'} para essa placa
       </SectionLabel>
 
       {allMatches.map((match, idx) => {
@@ -76,7 +76,7 @@ export function VersionSelectionScreen({
                   )}
                 </View>
                 <Text style={styles.versionMeta}>
-                  {formatModelYear(match.vehicle)} · {match.vehicle.fuel} · cód. {match.vehicle.codeFipe}
+                  {formatFabModelYear(match.vehicle)} · {match.vehicle.fuel} · cód. {match.vehicle.codeFipe}
                 </Text>
                 <Text style={[styles.versionPrice, isSelected && styles.versionPriceSelected]}>
                   {match.vehicle.priceLabel}

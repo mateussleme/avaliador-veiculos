@@ -38,6 +38,11 @@ export interface FipeVehicleInfo {
   // não disponíveis — telas devem tratar como opcionais.
   chassi?: string;
   renavam?: string;
+  // Ano de fabricacao (anoFabricacao da APIBrasil). Pode diferir do modelYear
+  // (ano-modelo): um carro fabricado em 2022 pode ser modelo 2023. A FIPE
+  // precifica pelo ano-modelo, entao manufactureYear e informativo, para
+  // ajudar a confirmar o veiculo certo. undefined na busca manual.
+  manufactureYear?: number;
 }
 
 // ---- Métricas de avaliação informadas pelo usuário ----
@@ -59,6 +64,12 @@ export interface EvaluationInput {
                                     // não muda o cálculo hoje (só existe uma tabela de valores).
   hasDelamination: boolean;
   delaminatedWindowCount: number;  // 0-7, cada vidro delaminado desconta R$6.000
+  // Gastos adicionais previstos em R$ (peças, funilaria, documentação, etc.).
+  // Descontam da sugestão de compra, como um custo. Opcional: ausente = 0.
+  additionalCosts?: number;
+  // Opcionais / valorização em R$ (teto solar, acabamento/pintura especial...).
+  // SOMAM na sugestão de compra — a FIPE não distingue esses opcionais. Ausente = 0.
+  optionalsValue?: number;
 }
 
 export type AdjustmentSeverity = 'good' | 'neutral' | 'caution' | 'danger';
@@ -80,6 +91,8 @@ export interface EvaluationResult {
   adjustmentPercent: number;      // soma dos ajustes percentuais (km + pneus + revisão + repintura %)
   estimatedValue: number;         // standardValue × (1 + adjustmentPercent/100)
   preparationCost: number;        // custo de preparação em R$ (peças + rodas para pintar)
+  additionalCosts: number;        // gastos adicionais previstos em R$ (informado pelo avaliador)
+  optionalsValue: number;         // opcionais/valorização em R$ que SOMAM na oferta
   armorAdjustmentValue: number;   // blindagem em R$: positivo = bônus (carro novo), negativo = desconto (idade/delaminação)
   finalOfferValue: number;        // estimatedValue - preparationCost + armorAdjustmentValue = valor da oferta de compra
   repasseValue: number;           // finalOfferValue × 0.92 = valor para repasse

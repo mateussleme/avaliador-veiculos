@@ -18,6 +18,8 @@ import {
 } from '../services/evaluationService';
 import { supabase } from '../lib/supabase';
 import { EvaluationWithOutcome } from '../types/database';
+import { DateRangeField } from '../components/DateRangeField';
+import { DateRange, EMPTY_RANGE, hasRange, rangeFromISO, rangeToISO } from '../domain/dateFilter';
 import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 
 interface HistoryScreenProps {
@@ -110,7 +112,13 @@ export function HistoryScreen({ onSelectEvaluation, refreshTrigger }: HistoryScr
   const [searchResults, setSearchResults] = useState<EvaluationWithOutcome[]>([]);
   const [searching, setSearching] = useState(false);
 
+  // Filtro por intervalo de datas. rangeRef acompanha o valor de forma sincrona,
+  // para load/loadMore (callbacks estaveis) lerem o intervalo sem virar dependencia.
+  const [dateRange, setDateRange] = useState<DateRange>(EMPTY_RANGE);
+  const rangeRef = useRef<DateRange>(EMPTY_RANGE);
+
   const isSearching = debouncedQuery.trim().length > 0;
+  const filterActive = hasRange(dateRange);
 
   // Ref com a lista atual: permite que loadMore/handleDelete sejam estáveis
   // (useCallback sem dependências da lista) e ainda leiam o estado atual.
@@ -128,7 +136,8 @@ export function HistoryScreen({ onSelectEvaluation, refreshTrigger }: HistoryScr
         setHasMore(false);
         return;
       }
-      const first = await fetchEvaluationsPage(0);
+      const first = await fetchEvaluationsPage(
+        0, HISTORY_PAGE_SIZE, rangeFromISO(rangeRef.current), rangeToISO(rangeRef.current));
       setEvaluations(first);
       setHasMore(first.length === HISTORY_PAGE_SIZE);
     } catch (err: any) {
@@ -139,14 +148,26 @@ export function HistoryScreen({ onSelectEvaluation, refreshTrigger }: HistoryScr
     }
   }, []);
 
-  useEffect(() => { load(); }, [load, refreshTrigger]);
+  // Recarrega na montagem, ao voltar de outra tela (refreshTrigger) e ao trocar
+  // o intervalo. rangeRef ja foi atualizado sincronamente em handleRangeChange.
+  useEffect(() => { load(); }, [load, refreshTrigger, dateRange]);
+
+  function handleRangeChange(range: DateRange) {
+    rangeRef.current = range; // sincrono, antes do load disparado pelo efeito
+    setDateRange(range);
+  }
 
   // ---- Próximas páginas (rolagem infinita) ----
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || isSearching || loading) return;
     setLoadingMore(true);
     try {
-      const next = await fetchEvaluationsPage(evaluationsRef.current.length);
+      const next = await fetchEvaluationsPage(
+        evaluationsRef.current.length,
+        HISTORY_PAGE_SIZE,
+        rangeFromISO(rangeRef.current),
+        rangeToISO(rangeRef.current)
+      );
       if (next.length > 0) {
         setEvaluations((prev) => {
           // Evita duplicar se algo foi inserido entre uma página e outra.
@@ -175,12 +196,12 @@ export function HistoryScreen({ onSelectEvaluation, refreshTrigger }: HistoryScr
 
     let active = true;
     setSearching(true);
-    searchEvaluations(term)
+    searchEvaluations(term, 50, rangeFromISO(dateRange), rangeToISO(dateRange))
       .then((rows) => { if (active) setSearchResults(rows); })
       .catch(() => { if (active) setSearchResults([]); })
       .finally(() => { if (active) setSearching(false); });
     return () => { active = false; };
-  }, [debouncedQuery]);
+  }, [debouncedQuery, dateRange]);
 
   const visibleEvaluations = isSearching ? searchResults : evaluations;
 
@@ -235,7 +256,10 @@ export function HistoryScreen({ onSelectEvaluation, refreshTrigger }: HistoryScr
     );
   }
 
-  if (evaluations.length === 0) {
+  // Vazio de tela cheia apenas quando o historico esta realmente vazio (sem
+  // periodo nem busca). Com filtro/busca ativos, mantemos a UI para o usuario
+  // poder trocar o periodo — o "nada encontrado" vai no lugar da lista.
+  if (evaluations.length === 0 && !filterActive && !isSearching) {
     return (
       <View style={styles.center}>
         <Text style={styles.emptyTitle}>Nenhuma avaliação ainda</Text>
@@ -265,6 +289,8 @@ export function HistoryScreen({ onSelectEvaluation, refreshTrigger }: HistoryScr
         )}
       </View>
 
+      <DateRangeField value={dateRange} onChange={handleRangeChange} />
+
       <FlatList
         data={visibleEvaluations}
         keyExtractor={(item) => item.id}
@@ -277,7 +303,9 @@ export function HistoryScreen({ onSelectEvaluation, refreshTrigger }: HistoryScr
                 ? 'Buscando…'
                 : isSearching
                   ? `Nenhuma avaliação encontrada para "${debouncedQuery}".`
-                  : 'Nenhuma avaliação no histórico ainda.'}
+                  : filterActive
+                    ? 'Nenhuma avaliação nesse período.'
+                    : 'Nenhuma avaliação no histórico ainda.'}
             </Text>
           </View>
         }

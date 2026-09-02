@@ -9,6 +9,10 @@ import { colors, fontFamily, radius, spacing, type } from '../theme/tokens';
 interface EvaluationDetailScreenProps {
   evaluation: EvaluationWithOutcome;
   onRegisterOutcome: () => void;
+  // Presente apenas quando a avaliacao veio de uma placa (da para rebuscar as
+  // versoes FIPE). Permite corrigir a versao do veiculo depois de salva.
+  onChangeVersion?: () => void;
+  changingVersion?: boolean; // carregando (rebuscando versoes)
 }
 
 function formatCurrency(value: number): string {
@@ -19,7 +23,7 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-export function EvaluationDetailScreen({ evaluation, onRegisterOutcome }: EvaluationDetailScreenProps) {
+export function EvaluationDetailScreen({ evaluation, onRegisterOutcome, onChangeVersion, changingVersion }: EvaluationDetailScreenProps) {
   const hasOutcome = !!evaluation.outcome_status;
 
   // Valor que o AVALIADOR ofertou. Prioridade: o valor do desfecho (comprado ->
@@ -89,9 +93,15 @@ export function EvaluationDetailScreen({ evaluation, onRegisterOutcome }: Evalua
 
       <Card style={styles.card}>
         <SectionLabel>Condições informadas</SectionLabel>
-        <Text style={styles.detailLine}>Pneus novos: {evaluation.new_tire_count}</Text>
+        <Text style={styles.detailLine}>Pneus para trocar: {evaluation.new_tire_count}</Text>
         <Text style={styles.detailLine}>Revisão na concessionária: {evaluation.had_dealer_service ? 'Sim' : 'Não'}</Text>
-        <Text style={styles.detailLine}>Repintura identificada: {evaluation.has_repaint ? 'Sim' : 'Não'}</Text>
+        <Text style={styles.detailLine}>Precisa de repintura: {evaluation.has_repaint ? 'Sim' : 'Não'}</Text>
+        {evaluation.additional_costs > 0 ? (
+          <Text style={styles.detailLine}>Gastos adicionais: {formatCurrency(evaluation.additional_costs)}</Text>
+        ) : null}
+        {evaluation.optionals_value > 0 ? (
+          <Text style={styles.detailLine}>Opcionais / valorização: {formatCurrency(evaluation.optionals_value)}</Text>
+        ) : null}
         <Text style={styles.detailLine}>Blindado: {evaluation.is_armored ? 'Sim' : 'Não'}</Text>
         {evaluation.is_armored && (
           <>
@@ -145,6 +155,16 @@ export function EvaluationDetailScreen({ evaluation, onRegisterOutcome }: Evalua
         onPress={onRegisterOutcome}
         style={styles.outcomeButton}
       />
+
+      {onChangeVersion ? (
+        <Button
+          label="Alterar versão"
+          variant="secondary"
+          onPress={onChangeVersion}
+          loading={changingVersion}
+          style={styles.changeVersionButton}
+        />
+      ) : null}
     </ScrollView>
   );
 }
@@ -186,4 +206,5 @@ const styles = StyleSheet.create({
   card: { marginBottom: spacing.md },
   detailLine: { fontSize: type.body.fontSize, color: colors.textPrimary, marginBottom: spacing.xs, fontFamily: fontFamily.inter },
   outcomeButton: { marginTop: spacing.sm },
+  changeVersionButton: { marginTop: spacing.sm },
 });

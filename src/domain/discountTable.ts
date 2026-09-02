@@ -4,7 +4,7 @@
 // Para adicionar novos modelos: insira uma nova linha em DISCOUNT_TABLE no formato
 //   { brand: "Marca", model: "Modelo", discount: 0.XX }, // XX%
 //
-// Modelos não listados usam DEFAULT_DISCOUNT_PERCENT (-20%).
+// Modelos não listados usam DEFAULT_DISCOUNT_PERCENT (-22%).
 
 export interface DiscountEntry {
   brand: string;
@@ -16,32 +16,38 @@ export interface DiscountEntry {
   kmPerYear?: number;
 }
 
-export const DEFAULT_DISCOUNT_PERCENT = 20;
+export const DEFAULT_DISCOUNT_PERCENT = 22;
 
 // ---- Tabela principal — edite aqui para adicionar ou ajustar modelos ----
 export const DISCOUNT_TABLE: DiscountEntry[] = [
   // BMW
-  { brand: "BMW", model: "118i", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "120i", discount: 0.15 }, // 15%
-  { brand: "BMW", model: "218i", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "220i", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "320i", discount: 0.15 }, // 15%
-  { brand: "BMW", model: "328i", discount: 0.15 }, // 15%
-  { brand: "BMW", model: "330e", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "330i", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "420i", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "430i", discount: 0.18 }, // 18%
+  { brand: "BMW", model: "118i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "120i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "218i", discount: 0.25 }, // 25% (todas as 218: M Sport e Sport GP)
+  { brand: "BMW", model: "220i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "320i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "328i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "330e", discount: 0.25 }, // 25%
+  { brand: "BMW", model: "330i", discount: 0.25 }, // 25%
+  { brand: "BMW", model: "420i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "430i", discount: 0.22 }, // 22%
   { brand: "BMW", model: "530e", discount: 0.25 }, // 25%
   { brand: "BMW", model: "530i", discount: 0.23 }, // 23%
   { brand: "BMW", model: "540i", discount: 0.23 }, // 23%
   // Variantes automáticas antigas com sufixo "iA" grudado ("320iA", "328iA"...),
   // mesmo carro do modelo sem "iA". A FIPE também usa "530i/iA"/"540i/iA" com
   // barra, que já casam com "530i"/"540i" — aqui cobrimos só a grafia grudada.
-  { brand: "BMW", model: "118ia", discount: 0.18 }, // 18% (= 118i)
-  { brand: "BMW", model: "120ia", discount: 0.15 }, // 15% (= 120i)
-  { brand: "BMW", model: "320ia", discount: 0.15 }, // 15% (= 320i)
-  { brand: "BMW", model: "328ia", discount: 0.15 }, // 15% (= 328i)
-  { brand: "BMW", model: "330ia", discount: 0.18 }, // 18% (= 330i)
+  { brand: "BMW", model: "118ia", discount: 0.22 }, // 22% (= 118i)
+  { brand: "BMW", model: "120ia", discount: 0.22 }, // 22% (= 120i)
+  { brand: "BMW", model: "320ia", discount: 0.22 }, // 22% (= 320i)
+  // Trims do 320i (tokens com "320ia" nao vazam para outros modelos):
+  //  - Sport / GT Sport / Modern-Sport e as /GP -> 25%
+  //  - M Sport -> 22% (mais especifico, vence o "320iA Sport")
+  { brand: "BMW", model: "320iA Sport", discount: 0.25 }, // 25% — GT Sport, Modern/Sport
+  { brand: "BMW", model: "320iA Gp", discount: 0.25 },    // 25% — versoes "/GP"
+  { brand: "BMW", model: "320iA M Sport", discount: 0.22 }, // 22% — M Sport
+  { brand: "BMW", model: "328ia", discount: 0.22 }, // 22% (= 328i)
+  { brand: "BMW", model: "330ia", discount: 0.25 }, // 25% (= 330i)
   { brand: "BMW", model: "540ia", discount: 0.23 }, // 23% (= 540i)
   { brand: "BMW", model: "730li", discount: 0.3 }, // 30%
   { brand: "BMW", model: "745le", discount: 0.3 }, // 30%
@@ -51,38 +57,38 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "BMW", model: "750il", discount: 0.3 }, // 30%
   { brand: "BMW", model: "750ila", discount: 0.3 }, // 30%
   { brand: "BMW", model: "I4", discount: 0.3 }, // 30%
-  { brand: "BMW", model: "M 135i", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "M 140i", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "M 235i", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "M 240i", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "M 340i", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "M 440i", discount: 0.18 }, // 18%
+  { brand: "BMW", model: "M 135i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "M 140i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "M 235i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "M 240i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "M 340i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "M 440i", discount: 0.22 }, // 22%
   { brand: "BMW", model: "M 760li", discount: 0.3 }, // 30%
   { brand: "BMW", model: "M 850i", discount: 0.35 }, // 35%
   // A FIPE também grafa esses M sem espaço ("M140i", "M340i", "M760Li",
   // "M850i"...). Mesmo carro, mesma taxa — sem estas entradas caíam em 20%.
-  { brand: "BMW", model: "M135i", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "M140i", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "M235i", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "M240i", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "M340i", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "M440i", discount: 0.18 }, // 18%
+  { brand: "BMW", model: "M135i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "M140i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "M235i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "M240i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "M340i", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "M440i", discount: 0.22 }, // 22%
   { brand: "BMW", model: "M760li", discount: 0.3 }, // 30%
   { brand: "BMW", model: "M850i", discount: 0.35 }, // 35%
-  { brand: "BMW", model: "M2", discount: 0.2 }, // 20%
-  { brand: "BMW", model: "M3", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "M4", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "M5", discount: 0.15 }, // 15%
+  { brand: "BMW", model: "M2", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "M3", discount: 0.25 }, // 25%
+  { brand: "BMW", model: "M4", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "M5", discount: 0.22 }, // 22%
   { brand: "BMW", model: "M6", discount: 0.35 }, // 35%
   { brand: "BMW", model: "M8", discount: 0.35 }, // 35%
-  { brand: "BMW", model: "X1", discount: 0.18 }, // 18%
-  { brand: "BMW", model: "X2", discount: 0.2 }, // 20%
-  { brand: "BMW", model: "X3", discount: 0.18 }, // 18%
+  { brand: "BMW", model: "X1", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "X2", discount: 0.22 }, // 22%
+  { brand: "BMW", model: "X3", discount: 0.25 }, // 25%
   { brand: "BMW", model: "X4", discount: 0.22 }, // 22%
   { brand: "BMW", model: "X5", discount: 0.25 }, // 25%
-  { brand: "BMW", model: "X6", discount: 0.18 }, // 18%
+  { brand: "BMW", model: "X6", discount: 0.27 }, // 27%
   { brand: "BMW", model: "X7", discount: 0.3 }, // 30%
-  { brand: "BMW", model: "Z4", discount: 0.18 }, // 18%
+  { brand: "BMW", model: "Z4", discount: 0.22 }, // 22%
   { brand: "BMW", model: "I3", discount: 0.25 }, // 25%
   { brand: "BMW", model: "I5", discount: 0.3 }, // 30%
   { brand: "BMW", model: "I7", discount: 0.35 }, // 35%
@@ -137,18 +143,17 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Land Rover", model: "Range R Vel", discount: 0.3 }, // 30% — "Range R. VEL."
   { brand: "Land Rover", model: "Range R Velar", discount: 0.3 }, // 30%
   { brand: "Land Rover", model: "Range R Vogue", discount: 0.3 }, // 30%
+  // SV Autobiography (topo de linha, LWB) — desconto maior, 40%. Os tokens
+  // "sv" + "autob" miram so essa versao: nao casam com "Autobio." (comum, 25%),
+  // nem com "Sport Autob." (Sport, 30%), nem com "SVR" (token "svr" != "sv").
+  { brand: "Land Rover", model: "Range R Sv Autob", discount: 0.40 }, // 40% — "Range R. SV Autob."
+  { brand: "Land Rover", model: "Range R Sv Autobiography", discount: 0.40 }, // 40% — grafia por extenso
 
   // Audi
-  { brand: "Audi", model: "A1", discount: 0.2 }, // 20% (mantido — não veio na planilha nova)
-  // A3: base 20%; a planilha separa por carroceria — Sedan 24% e Sportback
-  // 22%. A FIPE grafa os dois de duas formas ("A3 Sedan"/"A3 Sed." e
-  // "A3 Sportback"/"A3 Sportb."), então há uma entrada para cada grafia.
-  // A entrada base "A3" cobre versões sem carroceria (cabriolet, hatch antigo).
-  { brand: "Audi", model: "A3", discount: 0.2, kmPerYear: 8000 }, // 20% (demais A3)
-  { brand: "Audi", model: "A3 Sedan", discount: 0.24, kmPerYear: 8000 }, // 24%
-  { brand: "Audi", model: "A3 Sed", discount: 0.24, kmPerYear: 8000 }, // 24% (grafia "A3 Sed.")
-  { brand: "Audi", model: "A3 Sportback", discount: 0.22, kmPerYear: 8000 }, // 22%
-  { brand: "Audi", model: "A3 Sportb", discount: 0.22, kmPerYear: 8000 }, // 22% (grafia "A3 Sportb.")
+  { brand: "Audi", model: "A1", discount: 0.22 }, // 22% (mantido — não veio na planilha nova)
+  // A3: TODAS as versões a 27% (Sedan, Sportback, cabriolet, hatch...). O token
+  // "a3" cobre todas as grafias da FIPE, sem colidir com A1/A4/A5.
+  { brand: "Audi", model: "A3", discount: 0.27, kmPerYear: 8000 }, // 27% (todas as A3)
   { brand: "Audi", model: "A4", discount: 0.28, kmPerYear: 8000 }, // 28%
   { brand: "Audi", model: "A5", discount: 0.3, kmPerYear: 8000 }, // 30%
   { brand: "Audi", model: "A6", discount: 0.3, kmPerYear: 8000 }, // 30%
@@ -180,23 +185,23 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Audi", model: "Tts", discount: 0.25 }, // 25% (mantido)
 
   // Mercedez-Benz
-  { brand: "Mercedez-Benz", model: "A 200", discount: 0.2 }, // 20%
-  { brand: "Mercedez-Benz", model: "A 250", discount: 0.2 }, // 20%
-  { brand: "Mercedez-Benz", model: "A 35 Amg", discount: 0.2 }, // 20%
+  { brand: "Mercedez-Benz", model: "A 200", discount: 0.22 }, // 22%
+  { brand: "Mercedez-Benz", model: "A 250", discount: 0.22 }, // 22%
+  { brand: "Mercedez-Benz", model: "A 35 Amg", discount: 0.22 }, // 22%
   { brand: "Mercedez-Benz", model: "A 45 Amg", discount: 0.22 }, // 22%
   { brand: "Mercedez-Benz", model: "Amg Gt", discount: 0.25 }, // 25%
   { brand: "Mercedez-Benz", model: "Amg Gt 43", discount: 0.25 }, // 25%
   { brand: "Mercedez-Benz", model: "Amg Gt 63", discount: 0.3 }, // 30%
-  { brand: "Mercedez-Benz", model: "B 200", discount: 0.2 }, // 20%
-  { brand: "Mercedez-Benz", model: "C 180", discount: 0.2 }, // 20%
-  { brand: "Mercedez-Benz", model: "C 200", discount: 0.2 }, // 20%
-  { brand: "Mercedez-Benz", model: "C 250", discount: 0.2 }, // 20%
-  { brand: "Mercedez-Benz", model: "C 300", discount: 0.2 }, // 20%
+  { brand: "Mercedez-Benz", model: "B 200", discount: 0.22 }, // 22%
+  { brand: "Mercedez-Benz", model: "C 180", discount: 0.22 }, // 22%
+  { brand: "Mercedez-Benz", model: "C 200", discount: 0.22 }, // 22%
+  { brand: "Mercedez-Benz", model: "C 250", discount: 0.22 }, // 22%
+  { brand: "Mercedez-Benz", model: "C 300", discount: 0.22 }, // 22%
   { brand: "Mercedez-Benz", model: "C 43 Amg", discount: 0.22 }, // 22%
   { brand: "Mercedez-Benz", model: "C 63 Amg", discount: 0.3 }, // 30%
-  { brand: "Mercedez-Benz", model: "Cla 180", discount: 0.2 }, // 20%
-  { brand: "Mercedez-Benz", model: "Cla 200", discount: 0.2 }, // 20%
-  { brand: "Mercedez-Benz", model: "Cla 250", discount: 0.2 }, // 20%
+  { brand: "Mercedez-Benz", model: "Cla 180", discount: 0.22 }, // 22%
+  { brand: "Mercedez-Benz", model: "Cla 200", discount: 0.22 }, // 22%
+  { brand: "Mercedez-Benz", model: "Cla 250", discount: 0.22 }, // 22%
   { brand: "Mercedez-Benz", model: "Cla 35 Amg", discount: 0.22 }, // 22%
   { brand: "Mercedez-Benz", model: "Cla 45 Amg", discount: 0.23 }, // 23%
   { brand: "Mercedez-Benz", model: "Cls 400", discount: 0.25 }, // 25%
@@ -220,9 +225,9 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Mercedez-Benz", model: "Eqs 450 Suv", discount: 0.3 }, // 30%
   { brand: "Mercedez-Benz", model: "Eqs 450+ Suv", discount: 0.3 }, // 30%
   { brand: "Mercedez-Benz", model: "Eqs 53 Amg", discount: 0.3 }, // 30%
-  { brand: "Mercedez-Benz", model: "G 63 Amg", discount: 0.2 }, // 20%
-  { brand: "Mercedez-Benz", model: "Gla 200", discount: 0.2 }, // 20%
-  { brand: "Mercedez-Benz", model: "Gla 250", discount: 0.2 }, // 20%
+  { brand: "Mercedez-Benz", model: "G 63 Amg", discount: 0.22 }, // 22%
+  { brand: "Mercedez-Benz", model: "Gla 200", discount: 0.22 }, // 22%
+  { brand: "Mercedez-Benz", model: "Gla 250", discount: 0.22 }, // 22%
   { brand: "Mercedez-Benz", model: "Gla 35 Amg", discount: 0.25 }, // 25%
   { brand: "Mercedez-Benz", model: "Gla 45 Amg", discount: 0.25 }, // 25%
   { brand: "Mercedez-Benz", model: "Glb 200", discount: 0.22 }, // 22%
@@ -233,14 +238,13 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Mercedez-Benz", model: "Glc 300", discount: 0.22 }, // 22%
   { brand: "Mercedez-Benz", model: "Glc 43 Amg", discount: 0.25 }, // 25%
   { brand: "Mercedez-Benz", model: "Glc 63 Amg", discount: 0.3 }, // 30%
-  { brand: "Mercedez-Benz", model: "Gle 350", discount: 0.28 }, // 28%
-  { brand: "Mercedez-Benz", model: "Gle 400", discount: 0.28 }, // 28%
-  { brand: "Mercedez-Benz", model: "Gle 400d", discount: 0.28 }, // 28%
-  { brand: "Mercedez-Benz", model: "Gle 43 Amg", discount: 0.28 }, // 28%
-  { brand: "Mercedez-Benz", model: "Gle 450d", discount: 0.28 }, // 28%
-  { brand: "Mercedez-Benz", model: "Gle 450", discount: 0.28 }, // 28% — FIPE grafa "GLE-450 ... Diesel" (sem o "d")
-  { brand: "Mercedez-Benz", model: "Gle 53 Amg", discount: 0.28 }, // 28%
-  { brand: "Mercedez-Benz", model: "Gle 63 Amg", discount: 0.3 }, // 30%
+  // TODAS as versoes GLE -> 35%. Um unico token "gle" cobre 350/400/450/53/63,
+  // Coupe e trims futuros. Nao colide com GLS/GLC/GLA/GLB (palavras diferentes).
+  { brand: "Mercedez-Benz", model: "Gle", discount: 0.35 }, // 35%
+  // Especifica para o "GLE 63 AMG S": o "S" solto casaria com o S-Class
+  // "S 63 Amg" (3 tokens) e venceria o "Gle" (1 token). Esta entrada empata em
+  // 3 tokens e, por vir antes na tabela, vence -> mantem o GLE 63 em 35%.
+  { brand: "Mercedez-Benz", model: "Gle 63 Amg", discount: 0.35 }, // 35%
   { brand: "Mercedez-Benz", model: "Gls 350", discount: 0.28 }, // 28%
   { brand: "Mercedez-Benz", model: "Gls 450", discount: 0.28 }, // 28%
   { brand: "Mercedez-Benz", model: "Gls 600", discount: 0.3 }, // 30%
@@ -258,7 +262,7 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Mercedez-Benz", model: "Slc 43 Amg", discount: 0.35 }, // 35%
 
   // Volvo
-  { brand: "Volvo", model: "C40", discount: 0.2 }, // 20%
+  { brand: "Volvo", model: "C40", discount: 0.22 }, // 22%
   { brand: "Volvo", model: "Ec40", discount: 0.25 }, // 25%
   { brand: "Volvo", model: "Ex30", discount: 0.25 }, // 25%
   { brand: "Volvo", model: "Ex40", discount: 0.25 }, // 25%
@@ -284,175 +288,175 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
 
   // Toyota
   { brand: "Toyota", model: "Camry", discount: 0.3 }, // 30%
-  { brand: "Toyota", model: "Corolla", discount: 0.16 }, // 16%
-  { brand: "Toyota", model: "Corolla Cross", discount: 0.16 }, // 16%
-  { brand: "Toyota", model: "Etios", discount: 0.15 }, // 15%
-  { brand: "Toyota", model: "Etios Cross", discount: 0.15 }, // 15%
-  { brand: "Toyota", model: "Gr Corolla", discount: 0.18 }, // 18%
-  { brand: "Toyota", model: "Gr Yaris", discount: 0.18 }, // 18%
-  { brand: "Toyota", model: "Hiace", discount: 0.18 }, // 18%
-  { brand: "Toyota", model: "Hilux", discount: 0.18 }, // 18%
-  { brand: "Toyota", model: "Hilux Sw4", discount: 0.18 }, // 18%
-  { brand: "Toyota", model: "Prius", discount: 0.2 }, // 20%
+  { brand: "Toyota", model: "Corolla", discount: 0.22 }, // 22%
+  { brand: "Toyota", model: "Corolla Cross", discount: 0.22 }, // 22%
+  { brand: "Toyota", model: "Etios", discount: 0.22 }, // 22%
+  { brand: "Toyota", model: "Etios Cross", discount: 0.22 }, // 22%
+  { brand: "Toyota", model: "Gr Corolla", discount: 0.22 }, // 22%
+  { brand: "Toyota", model: "Gr Yaris", discount: 0.22 }, // 22%
+  { brand: "Toyota", model: "Hiace", discount: 0.22 }, // 22%
+  { brand: "Toyota", model: "Hilux", discount: 0.22 }, // 22%
+  { brand: "Toyota", model: "Hilux Sw4", discount: 0.22 }, // 22%
+  { brand: "Toyota", model: "Prius", discount: 0.22 }, // 22%
   { brand: "Toyota", model: "Rav4", discount: 0.22 }, // 22%
   { brand: "Toyota", model: "Sienna", discount: 0.22 }, // 22%
   { brand: "Toyota", model: "Supra", discount: 0.22 }, // 22%
   { brand: "Toyota", model: "Tundra", discount: 0.22 }, // 22%
-  { brand: "Toyota", model: "Yaris", discount: 0.18 }, // 18%
-  { brand: "Toyota", model: "Yaris Cross", discount: 0.18 }, // 18%
+  { brand: "Toyota", model: "Yaris", discount: 0.22 }, // 22%
+  { brand: "Toyota", model: "Yaris Cross", discount: 0.22 }, // 22%
 
   // Honda
   { brand: "Honda", model: "Accord", discount: 0.3 }, // 30%
-  { brand: "Honda", model: "City", discount: 0.15 }, // 15%
-  { brand: "Honda", model: "Civic", discount: 0.15 }, // 15%
+  { brand: "Honda", model: "City", discount: 0.22 }, // 22%
+  { brand: "Honda", model: "Civic", discount: 0.22 }, // 22%
   // CR-V: só a versão Híbrida tem 25%. Confirmado ao vivo na FIPE que hoje
   // só existe UMA versão "(Híbrido)" ("CR-V Touring 2.0 16V AWD Aut.(Híbrido)");
   // as demais versões (2.0/2.4 a combustão) caem no padrão de 20%.
   { brand: "Honda", model: "Cr-v Hibrido", discount: 0.25 }, // 25%
-  { brand: "Honda", model: "Fit", discount: 0.15 }, // 15%
-  { brand: "Honda", model: "Hr-v", discount: 0.18 }, // 18%
-  { brand: "Honda", model: "Wr-v", discount: 0.15 }, // 15%
+  { brand: "Honda", model: "Fit", discount: 0.22 }, // 22%
+  { brand: "Honda", model: "Hr-v", discount: 0.22 }, // 22%
+  { brand: "Honda", model: "Wr-v", discount: 0.22 }, // 22%
   { brand: "Honda", model: "Zr-v", discount: 0.22 }, // 22%
 
   // Fiat
-  { brand: "Fiat", model: "500", discount: 0.18 }, // 18%
+  { brand: "Fiat", model: "500", discount: 0.22 }, // 22%
   { brand: "Fiat", model: "500e", discount: 0.3 }, // 30%
-  { brand: "Fiat", model: "Argo", discount: 0.2 }, // 20%
-  { brand: "Fiat", model: "Cronos", discount: 0.2 }, // 20%
-  { brand: "Fiat", model: "Doblò", discount: 0.18 }, // 18%
-  { brand: "Fiat", model: "Ducato", discount: 0.18 }, // 18%
-  { brand: "Fiat", model: "Fastback", discount: 0.18 }, // 18%
-  { brand: "Fiat", model: "Fiorino", discount: 0.18 }, // 18%
-  { brand: "Fiat", model: "Grand Siena", discount: 0.18 }, // 18%
-  { brand: "Fiat", model: "Mobi", discount: 0.18 }, // 18%
-  { brand: "Fiat", model: "Palio", discount: 0.18 }, // 18%
-  { brand: "Fiat", model: "Pulse", discount: 0.19 }, // 19%
-  { brand: "Fiat", model: "Punto", discount: 0.19 }, // 19%
-  { brand: "Fiat", model: "Scudo", discount: 0.2 }, // 20%
-  { brand: "Fiat", model: "Strada", discount: 0.18 }, // 18%
+  { brand: "Fiat", model: "Argo", discount: 0.22 }, // 22%
+  { brand: "Fiat", model: "Cronos", discount: 0.22 }, // 22%
+  { brand: "Fiat", model: "Doblò", discount: 0.22 }, // 22%
+  { brand: "Fiat", model: "Ducato", discount: 0.22 }, // 22%
+  { brand: "Fiat", model: "Fastback", discount: 0.22 }, // 22%
+  { brand: "Fiat", model: "Fiorino", discount: 0.22 }, // 22%
+  { brand: "Fiat", model: "Grand Siena", discount: 0.22 }, // 22%
+  { brand: "Fiat", model: "Mobi", discount: 0.22 }, // 22%
+  { brand: "Fiat", model: "Palio", discount: 0.22 }, // 22%
+  { brand: "Fiat", model: "Pulse", discount: 0.22 }, // 22%
+  { brand: "Fiat", model: "Punto", discount: 0.22 }, // 22%
+  { brand: "Fiat", model: "Scudo", discount: 0.22 }, // 22%
+  { brand: "Fiat", model: "Strada", discount: 0.22 }, // 22%
   { brand: "Fiat", model: "Titano", discount: 0.25 }, // 25%
   { brand: "Fiat", model: "Topolino", discount: 0.25 }, // 25%
-  { brand: "Fiat", model: "Toro", discount: 0.18 }, // 18%
-  { brand: "Fiat", model: "Uno", discount: 0.18 }, // 18%
+  { brand: "Fiat", model: "Toro", discount: 0.22 }, // 22%
+  { brand: "Fiat", model: "Uno", discount: 0.22 }, // 22%
 
   // Chevrolet
   { brand: "Chevrolet", model: "Blazer Ev", discount: 0.3 }, // 30%
   { brand: "Chevrolet", model: "Bolt", discount: 0.3 }, // 30%
   { brand: "Chevrolet", model: "Bolt Euv", discount: 0.3 }, // 30%
-  { brand: "Chevrolet", model: "Camaro", discount: 0.2 }, // 20%
-  { brand: "Chevrolet", model: "Captiva", discount: 0.2 }, // 20%
+  { brand: "Chevrolet", model: "Camaro", discount: 0.22 }, // 22%
+  { brand: "Chevrolet", model: "Captiva", discount: 0.22 }, // 22%
   { brand: "Chevrolet", model: "Captiva Ev", discount: 0.3 }, // 30%
-  { brand: "Chevrolet", model: "Cobalt", discount: 0.18 }, // 18%
-  { brand: "Chevrolet", model: "Corvette", discount: 0.18 }, // 18%
-  { brand: "Chevrolet", model: "Cruze", discount: 0.18 }, // 18%
-  { brand: "Chevrolet", model: "Equinox", discount: 0.2 }, // 20%
+  { brand: "Chevrolet", model: "Cobalt", discount: 0.22 }, // 22%
+  { brand: "Chevrolet", model: "Corvette", discount: 0.22 }, // 22%
+  { brand: "Chevrolet", model: "Cruze", discount: 0.22 }, // 22%
+  { brand: "Chevrolet", model: "Equinox", discount: 0.22 }, // 22%
   { brand: "Chevrolet", model: "Equinox Ev", discount: 0.3 }, // 30%
-  { brand: "Chevrolet", model: "Joy", discount: 0.18 }, // 18%
-  { brand: "Chevrolet", model: "Montana", discount: 0.18 }, // 18%
-  { brand: "Chevrolet", model: "Onix", discount: 0.18 }, // 18%
-  { brand: "Chevrolet", model: "Prisma", discount: 0.18 }, // 18%
-  { brand: "Chevrolet", model: "S10", discount: 0.18 }, // 18%
+  { brand: "Chevrolet", model: "Joy", discount: 0.22 }, // 22%
+  { brand: "Chevrolet", model: "Montana", discount: 0.22 }, // 22%
+  { brand: "Chevrolet", model: "Onix", discount: 0.22 }, // 22%
+  { brand: "Chevrolet", model: "Prisma", discount: 0.22 }, // 22%
+  { brand: "Chevrolet", model: "S10", discount: 0.22 }, // 22%
   { brand: "Chevrolet", model: "Silverado", discount: 0.25 }, // 25%
   { brand: "Chevrolet", model: "Spark Euv", discount: 0.25 }, // 25%
-  { brand: "Chevrolet", model: "Spin", discount: 0.2 }, // 20%
+  { brand: "Chevrolet", model: "Spin", discount: 0.22 }, // 22%
   { brand: "Chevrolet", model: "Suburban", discount: 0.3 }, // 30%
-  { brand: "Chevrolet", model: "Tracker", discount: 0.2 }, // 20%
+  { brand: "Chevrolet", model: "Tracker", discount: 0.22 }, // 22%
   { brand: "Chevrolet", model: "Trailblazer", discount: 0.25 }, // 25%
 
   // Volkswagen
   { brand: "Volkswagen", model: "Amarok", discount: 0.25 }, // 25% — todas as versões/trims
-  { brand: "Volkswagen", model: "Crossfox", discount: 0.2 }, // 20%
-  { brand: "Volkswagen", model: "Delivery Express", discount: 0.2 }, // 20%
-  { brand: "Volkswagen", model: "Fox", discount: 0.18 }, // 18%
-  { brand: "Volkswagen", model: "Gol", discount: 0.18 }, // 18%
-  { brand: "Volkswagen", model: "Golf", discount: 0.2 }, // 20%
+  { brand: "Volkswagen", model: "Crossfox", discount: 0.22 }, // 22%
+  { brand: "Volkswagen", model: "Delivery Express", discount: 0.22 }, // 22%
+  { brand: "Volkswagen", model: "Fox", discount: 0.22 }, // 22%
+  { brand: "Volkswagen", model: "Gol", discount: 0.22 }, // 22%
+  { brand: "Volkswagen", model: "Golf", discount: 0.22 }, // 22%
   { brand: "Volkswagen", model: "Id.buzz", discount: 0.25 }, // 25%
-  { brand: "Volkswagen", model: "Jetta", discount: 0.2 }, // 20%
-  { brand: "Volkswagen", model: "Nivus", discount: 0.18 }, // 18%
+  { brand: "Volkswagen", model: "Jetta", discount: 0.22 }, // 22%
+  { brand: "Volkswagen", model: "Nivus", discount: 0.22 }, // 22%
   { brand: "Volkswagen", model: "Passat", discount: 0.3 }, // 30%
-  { brand: "Volkswagen", model: "Polo", discount: 0.18 }, // 18%
-  { brand: "Volkswagen", model: "Saveiro", discount: 0.18 }, // 18%
-  { brand: "Volkswagen", model: "Spacefox", discount: 0.18 }, // 18%
-  { brand: "Volkswagen", model: "T-cross", discount: 0.18 }, // 18%
-  { brand: "Volkswagen", model: "Taos", discount: 0.19 }, // 19%
-  { brand: "Volkswagen", model: "Tera", discount: 0.19 }, // 19%
-  { brand: "Volkswagen", model: "Tiguan", discount: 0.19 }, // 19%
+  { brand: "Volkswagen", model: "Polo", discount: 0.22 }, // 22%
+  { brand: "Volkswagen", model: "Saveiro", discount: 0.22 }, // 22%
+  { brand: "Volkswagen", model: "Spacefox", discount: 0.22 }, // 22%
+  { brand: "Volkswagen", model: "T-cross", discount: 0.22 }, // 22%
+  { brand: "Volkswagen", model: "Taos", discount: 0.22 }, // 22%
+  { brand: "Volkswagen", model: "Tera", discount: 0.22 }, // 22%
+  { brand: "Volkswagen", model: "Tiguan", discount: 0.22 }, // 22%
   { brand: "Volkswagen", model: "Touareg", discount: 0.35 }, // 35%
-  { brand: "Volkswagen", model: "Up", discount: 0.18 }, // 18%
-  { brand: "Volkswagen", model: "Virtus", discount: 0.19 }, // 19%
-  { brand: "Volkswagen", model: "Voyage", discount: 0.18 }, // 18%
+  { brand: "Volkswagen", model: "Up", discount: 0.22 }, // 22%
+  { brand: "Volkswagen", model: "Virtus", discount: 0.22 }, // 22%
+  { brand: "Volkswagen", model: "Voyage", discount: 0.22 }, // 22%
 
   // Mitsubish
-  { brand: "Mitsubish", model: "Asx", discount: 0.2 }, // 20%
-  { brand: "Mitsubish", model: "Eclipse Cross", discount: 0.18 }, // 18%
-  { brand: "Mitsubish", model: "L200 Outdoor", discount: 0.2 }, // 20%
-  { brand: "Mitsubish", model: "L200 Savana", discount: 0.2 }, // 20%
-  { brand: "Mitsubish", model: "L200 Triton", discount: 0.2 }, // 20%
-  { brand: "Mitsubish", model: "Lancer", discount: 0.2 }, // 20%
-  { brand: "Mitsubish", model: "Outlander", discount: 0.2 }, // 20%
-  { brand: "Mitsubish", model: "Outlander Sport", discount: 0.2 }, // 20%
-  { brand: "Mitsubish", model: "Pajero", discount: 0.18 }, // 18%
-  { brand: "Mitsubish", model: "Pajero Dakar", discount: 0.18 }, // 18%
-  { brand: "Mitsubish", model: "Pajero Full", discount: 0.2 }, // 20%
-  { brand: "Mitsubish", model: "Pajero Sport", discount: 0.19 }, // 19%
-  { brand: "Mitsubish", model: "Triton", discount: 0.18 }, // 18%
+  { brand: "Mitsubish", model: "Asx", discount: 0.22 }, // 22%
+  { brand: "Mitsubish", model: "Eclipse Cross", discount: 0.22 }, // 22%
+  { brand: "Mitsubish", model: "L200 Outdoor", discount: 0.22 }, // 22%
+  { brand: "Mitsubish", model: "L200 Savana", discount: 0.22 }, // 22%
+  { brand: "Mitsubish", model: "L200 Triton", discount: 0.22 }, // 22%
+  { brand: "Mitsubish", model: "Lancer", discount: 0.22 }, // 22%
+  { brand: "Mitsubish", model: "Outlander", discount: 0.22 }, // 22%
+  { brand: "Mitsubish", model: "Outlander Sport", discount: 0.22 }, // 22%
+  { brand: "Mitsubish", model: "Pajero", discount: 0.22 }, // 22%
+  { brand: "Mitsubish", model: "Pajero Dakar", discount: 0.22 }, // 22%
+  { brand: "Mitsubish", model: "Pajero Full", discount: 0.22 }, // 22%
+  { brand: "Mitsubish", model: "Pajero Sport", discount: 0.22 }, // 22%
+  { brand: "Mitsubish", model: "Triton", discount: 0.22 }, // 22%
 
   // Porsche
   { brand: "Porsche", model: "718", discount: 0.25 }, // 25%
   { brand: "Porsche", model: "911", discount: 0.25 }, // 25%
   { brand: "Porsche", model: "Cayenne", discount: 0.3 }, // 30%
   { brand: "Porsche", model: "Cayene", discount: 0.3 }, // 30% — a FIPE tem um "Cayene" (typo, sem um "n")
-  { brand: "Porsche", model: "Macan", discount: 0.2 }, // 20%
+  { brand: "Porsche", model: "Macan", discount: 0.22 }, // 22%
   { brand: "Porsche", model: "Panamera", discount: 0.25 }, // 25%
   { brand: "Porsche", model: "Taycan", discount: 0.3 }, // 30%
 
   // BYD
-  { brand: "BYD", model: "Dolphin", discount: 0.2 }, // 20%
-  { brand: "BYD", model: "Dolphin Mini", discount: 0.15 }, // 15%
+  { brand: "BYD", model: "Dolphin", discount: 0.22 }, // 22%
+  { brand: "BYD", model: "Dolphin Mini", discount: 0.22 }, // 22%
   { brand: "BYD", model: "Han", discount: 0.3 }, // 30%
-  { brand: "BYD", model: "King", discount: 0.2 }, // 20%
+  { brand: "BYD", model: "King", discount: 0.22 }, // 22%
   { brand: "BYD", model: "Seal", discount: 0.28 }, // 28%
   { brand: "BYD", model: "Shark", discount: 0.28 }, // 28%
-  { brand: "BYD", model: "Song Plus", discount: 0.2 }, // 20%
-  { brand: "BYD", model: "Song Plus Premium", discount: 0.2 }, // 20%
-  { brand: "BYD", model: "Song Pro", discount: 0.2 }, // 20%
+  { brand: "BYD", model: "Song Plus", discount: 0.22 }, // 22%
+  { brand: "BYD", model: "Song Plus Premium", discount: 0.22 }, // 22%
+  { brand: "BYD", model: "Song Pro", discount: 0.22 }, // 22%
   { brand: "BYD", model: "Tan", discount: 0.3 }, // 30%
   { brand: "BYD", model: "Yuan Plus", discount: 0.25 }, // 25%
   { brand: "BYD", model: "Yuan Pro", discount: 0.25 }, // 25%
 
   // Ford
   { brand: "Ford", model: "Bronco Sport", discount: 0.22 }, // 22%
-  { brand: "Ford", model: "E-transit", discount: 0.18 }, // 18%
-  { brand: "Ford", model: "Ecosport", discount: 0.18 }, // 18%
+  { brand: "Ford", model: "E-transit", discount: 0.22 }, // 22%
+  { brand: "Ford", model: "Ecosport", discount: 0.22 }, // 22%
   { brand: "Ford", model: "Edge", discount: 0.25 }, // 25%
   { brand: "Ford", model: "Escape", discount: 0.25 }, // 25%
-  { brand: "Ford", model: "F-150", discount: 0.2 }, // 20%
-  { brand: "Ford", model: "F-250", discount: 0.2 }, // 20%
-  { brand: "Ford", model: "F-350", discount: 0.2 }, // 20%
-  { brand: "Ford", model: "F-4000", discount: 0.2 }, // 20%
-  { brand: "Ford", model: "F-450", discount: 0.2 }, // 20%
-  { brand: "Ford", model: "Fiesta", discount: 0.2 }, // 20%
-  { brand: "Ford", model: "Focus", discount: 0.2 }, // 20%
-  { brand: "Ford", model: "Fusion", discount: 0.2 }, // 20%
+  { brand: "Ford", model: "F-150", discount: 0.22 }, // 22%
+  { brand: "Ford", model: "F-250", discount: 0.22 }, // 22%
+  { brand: "Ford", model: "F-350", discount: 0.22 }, // 22%
+  { brand: "Ford", model: "F-4000", discount: 0.22 }, // 22%
+  { brand: "Ford", model: "F-450", discount: 0.22 }, // 22%
+  { brand: "Ford", model: "Fiesta", discount: 0.22 }, // 22%
+  { brand: "Ford", model: "Focus", discount: 0.22 }, // 22%
+  { brand: "Ford", model: "Fusion", discount: 0.22 }, // 22%
   { brand: "Ford", model: "Gt", discount: 0.25 }, // 25%
-  { brand: "Ford", model: "Ka", discount: 0.18 }, // 18%
-  { brand: "Ford", model: "Ka +", discount: 0.19 }, // 19%
-  { brand: "Ford", model: "Maverick", discount: 0.2 }, // 20%
-  { brand: "Ford", model: "Mustang", discount: 0.2 }, // 20%
+  { brand: "Ford", model: "Ka", discount: 0.22 }, // 22%
+  { brand: "Ford", model: "Ka +", discount: 0.22 }, // 22%
+  { brand: "Ford", model: "Maverick", discount: 0.22 }, // 22%
+  { brand: "Ford", model: "Mustang", discount: 0.22 }, // 22%
   { brand: "Ford", model: "Mustang Mach-e", discount: 0.35 }, // 35%
-  { brand: "Ford", model: "Ranger", discount: 0.2 }, // 20%
+  { brand: "Ford", model: "Ranger", discount: 0.22 }, // 22%
   { brand: "Ford", model: "Territory", discount: 0.22 }, // 22%
-  { brand: "Ford", model: "Transit", discount: 0.2 }, // 20%
+  { brand: "Ford", model: "Transit", discount: 0.22 }, // 22%
 
   // Nissan
   { brand: "Nissan", model: "Frontier", discount: 0.25 }, // 25%
-  { brand: "Nissan", model: "Kait", discount: 0.2 }, // 20%
-  { brand: "Nissan", model: "Kicks", discount: 0.18 }, // 18%
-  { brand: "Nissan", model: "Kicks Play", discount: 0.18 }, // 18%
+  { brand: "Nissan", model: "Kait", discount: 0.22 }, // 22%
+  { brand: "Nissan", model: "Kicks", discount: 0.22 }, // 22%
+  { brand: "Nissan", model: "Kicks Play", discount: 0.22 }, // 22%
   { brand: "Nissan", model: "Leaf", discount: 0.3 }, // 30%
-  { brand: "Nissan", model: "March", discount: 0.18 }, // 18%
-  { brand: "Nissan", model: "Sentra", discount: 0.19 }, // 19%
-  { brand: "Nissan", model: "Versa", discount: 0.15 }, // 15%
+  { brand: "Nissan", model: "March", discount: 0.22 }, // 22%
+  { brand: "Nissan", model: "Sentra", discount: 0.22 }, // 22%
+  { brand: "Nissan", model: "Versa", discount: 0.22 }, // 22%
   { brand: "Nissan", model: "Z", discount: 0.3 }, // 30%
 
   // Caoa Chery
@@ -460,39 +464,39 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   { brand: "Caoa Chery", model: "Arrizo 6", discount: 0.25 }, // 25%
   { brand: "Caoa Chery", model: "Arrizo 6 Pro", discount: 0.25 }, // 25%
   { brand: "Caoa Chery", model: "Qq", discount: 0.25 }, // 25%
-  { brand: "Caoa Chery", model: "Tiggo 2", discount: 0.2 }, // 20%
-  { brand: "Caoa Chery", model: "Tiggo 3x", discount: 0.2 }, // 20%
-  { brand: "Caoa Chery", model: "Tiggo 5x Pro", discount: 0.2 }, // 20%
-  { brand: "Caoa Chery", model: "Tiggo 5x", discount: 0.2 }, // 20%
-  { brand: "Caoa Chery", model: "Tiggo 7", discount: 0.2 }, // 20%
-  { brand: "Caoa Chery", model: "Tiggo 7 Pro", discount: 0.2 }, // 20%
-  { brand: "Caoa Chery", model: "Tiggo 8", discount: 0.2 }, // 20%
-  { brand: "Caoa Chery", model: "Tiggo 8 Pro", discount: 0.2 }, // 20%
+  { brand: "Caoa Chery", model: "Tiggo 2", discount: 0.22 }, // 22%
+  { brand: "Caoa Chery", model: "Tiggo 3x", discount: 0.22 }, // 22%
+  { brand: "Caoa Chery", model: "Tiggo 5x Pro", discount: 0.22 }, // 22%
+  { brand: "Caoa Chery", model: "Tiggo 5x", discount: 0.22 }, // 22%
+  { brand: "Caoa Chery", model: "Tiggo 7", discount: 0.22 }, // 22%
+  { brand: "Caoa Chery", model: "Tiggo 7 Pro", discount: 0.22 }, // 22%
+  { brand: "Caoa Chery", model: "Tiggo 8", discount: 0.22 }, // 22%
+  { brand: "Caoa Chery", model: "Tiggo 8 Pro", discount: 0.22 }, // 22%
   { brand: "Caoa Chery", model: "Icar", discount: 0.25 }, // 25%
 
   // Hyundai
   { brand: "Hyundai", model: "Azera", discount: 0.25 }, // 25%
-  { brand: "Hyundai", model: "Creta", discount: 0.18 }, // 18%
-  { brand: "Hyundai", model: "Elantra", discount: 0.2 }, // 20%
-  { brand: "Hyundai", model: "Hb20", discount: 0.18 }, // 18%
-  { brand: "Hyundai", model: "Hb20s", discount: 0.18 }, // 18%
-  { brand: "Hyundai", model: "Hb20x", discount: 0.18 }, // 18%
-  { brand: "Hyundai", model: "Hr", discount: 0.18 }, // 18%
+  { brand: "Hyundai", model: "Creta", discount: 0.22 }, // 22%
+  { brand: "Hyundai", model: "Elantra", discount: 0.22 }, // 22%
+  { brand: "Hyundai", model: "Hb20", discount: 0.22 }, // 22%
+  { brand: "Hyundai", model: "Hb20s", discount: 0.22 }, // 22%
+  { brand: "Hyundai", model: "Hb20x", discount: 0.22 }, // 22%
+  { brand: "Hyundai", model: "Hr", discount: 0.22 }, // 22%
   { brand: "Hyundai", model: "Ioniq", discount: 0.25 }, // 25%
   { brand: "Hyundai", model: "Ioniq 5", discount: 0.28 }, // 28%
-  { brand: "Hyundai", model: "Ix35", discount: 0.2 }, // 20%
-  { brand: "Hyundai", model: "Kona", discount: 0.2 }, // 20%
+  { brand: "Hyundai", model: "Ix35", discount: 0.22 }, // 22%
+  { brand: "Hyundai", model: "Kona", discount: 0.22 }, // 22%
   { brand: "Hyundai", model: "Palisade", discount: 0.28 }, // 28%
   { brand: "Hyundai", model: "Santa Fé", discount: 0.25 }, // 25%
-  { brand: "Hyundai", model: "Tucson", discount: 0.2 }, // 20%
+  { brand: "Hyundai", model: "Tucson", discount: 0.22 }, // 22%
 
   // GWM
-  { brand: "GWM", model: "Haval H6", discount: 0.2 }, // 20%
-  { brand: "GWM", model: "Haval H6 Gt", discount: 0.2 }, // 20%
-  { brand: "GWM", model: "Haval H9", discount: 0.2 }, // 20%
-  { brand: "GWM", model: "Ora 03", discount: 0.18 }, // 18%
-  { brand: "GWM", model: "Poer P30", discount: 0.2 }, // 20%
-  { brand: "GWM", model: "Tank 300", discount: 0.2 }, // 20%
+  { brand: "GWM", model: "Haval H6", discount: 0.22 }, // 22%
+  { brand: "GWM", model: "Haval H6 Gt", discount: 0.22 }, // 22%
+  { brand: "GWM", model: "Haval H9", discount: 0.22 }, // 22%
+  { brand: "GWM", model: "Ora 03", discount: 0.22 }, // 22%
+  { brand: "GWM", model: "Poer P30", discount: 0.22 }, // 22%
+  { brand: "GWM", model: "Tank 300", discount: 0.22 }, // 22%
   { brand: "GWM", model: "Wey 07", discount: 0.25 }, // 25%
 
   // Mini
@@ -505,6 +509,16 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   // Edição especial JCW 2.0 Turbo 3p que a FIPE grafa "John.W.Pat.Moss"
   // (abrevia "Works" para "W"), o que não casa com a entrada acima.
   { brand: "Mini", model: "Cooper Pat Moss", discount: 0.22 }, // 22%
+  // ELETRICOS da Mini -> 30%. A FIPE rotula os eletricos com "(Elétrico)" no
+  // nome (normalizado vira a palavra "eletrico"), entao um unico token cobre
+  // todos: Cooper SE (e variacoes), Cooper E 3p, Countryman SE ALL4 eletrico e
+  // Aceman E/SE. NAO pega os hibridos, que a FIPE marca "(Híb.)" -> "hib".
+  // Cresce sozinho com novos eletricos rotulados.
+  { brand: "Mini", model: "Eletrico", discount: 0.30 }, // 30%
+  // JCW eletricos que a FIPE NAO rotula com "(Elétrico)" (so o "E"):
+  // "COOPER John Works E 3p" e "COOPER John Works Aceman E 5p". O token "e"
+  // isolado so aparece nesses dois JCW (os a combustao usam 1.6/2.0/Turbo).
+  { brand: "Mini", model: "John Works E", discount: 0.30 }, // 30%
 
   // Jeep
   // Confirmado ao vivo na FIPE (marca "Jeep", código 29): todos os trims de
@@ -521,6 +535,12 @@ export const DISCOUNT_TABLE: DiscountEntry[] = [
   // segunda entrada a R-1M cairia no desconto padrão (20%) por engano.
   { brand: "Yamaha", model: "Yzf R-1 1000", discount: 0.3 }, // 30%
   { brand: "Yamaha", model: "Yzf R-1m 1000", discount: 0.3 }, // 30%
+
+  // Ducati (motos)
+  // FIPE (marca "DUCATI", codigo 74) grafa "1299 Panigale" e "1299 Panigale S".
+  // Os tokens "1299" + "panigale" pegam as duas versoes e NAO colidem com
+  // "1199 Panigale", "959 Panigale" nem "Panigale V4" (nenhum tem "1299").
+  { brand: "Ducati", model: "1299 Panigale", discount: 0.35 }, // 35%
 ];
 
 // ---- Matching tolerante a variações de grafia ----
@@ -633,6 +653,14 @@ function getIndex(): IndexedEntry[] {
 
 const _lookupCache = new Map<string, DiscountLookupResult>();
 
+// Desconto por MARCA inteira (fallback): usado quando nenhum modelo especifico
+// casa. Vale para todos os modelos da marca, inclusive futuros. A chave e a
+// marca normalizada (ver normBrand). Se um modelo especifico da marca precisar
+// de outro valor, basta uma entrada em DISCOUNT_TABLE, que tem prioridade.
+const BRAND_DEFAULTS: Record<string, number> = {
+  lexus: 0.30, // todos os modelos Lexus -> 30%
+};
+
 export function lookupDiscount(brand: string, model: string): DiscountLookupResult {
   const cacheKey = `${brand}|${model}`;
   const cached = _lookupCache.get(cacheKey);
@@ -678,6 +706,13 @@ function computeDiscount(brand: string, model: string): DiscountLookupResult {
   const partial = partialIdx?.entry;
   if (partial) {
     return { discount: partial.discount, discountPercent: Math.round(partial.discount * 100), source: 'table', matchedBrand: partial.brand, matchedModel: partial.model, kmPerYear: partial.kmPerYear };
+  }
+
+  // 3. Fallback por marca: nenhum modelo casou, mas a marca inteira tem um
+  //    desconto definido (ex: Lexus -> 30%). Vale inclusive para modelos novos.
+  const brandDefault = BRAND_DEFAULTS[nb];
+  if (brandDefault !== undefined) {
+    return { discount: brandDefault, discountPercent: Math.round(brandDefault * 100), source: 'table', matchedBrand: brand, matchedModel: brand };
   }
 
   return {

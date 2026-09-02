@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { EvaluationInput, EvaluationResult, FipeVehicleInfo, VehicleKind } from '../domain/types';
+import { VersionRecompute } from '../domain/evaluationEngine';
 import { EvaluationWithOutcome, OutcomeStatus } from '../types/database';
 
 // Nota: estas funções requerem sessão ativa no Supabase.
@@ -48,6 +49,8 @@ export async function saveEvaluation(data: SaveEvaluationInput): Promise<string>
       delaminated_window_count: data.input.delaminatedWindowCount,
       armor_adjustment_value:   data.result.armorAdjustmentValue,
       preparation_cost:      data.result.preparationCost,
+      additional_costs:      data.result.additionalCosts,
+      optionals_value:       data.result.optionalsValue,
       final_offer_value:     data.result.finalOfferValue,
       repasse_value:         data.result.repasseValue,
       offer_value:           data.offerValue && data.offerValue > 0 ? data.offerValue : null,
@@ -57,6 +60,64 @@ export async function saveEvaluation(data: SaveEvaluationInput): Promise<string>
 
   if (error) throw new Error(error.message);
   return saved.id;
+}
+
+// Vincula um contato a uma avaliacao ja no momento da avaliacao (sem esperar o
+// desfecho). Cria um outcome "pendente" (status null) so com o contato. O
+// vinculo mora em outcomes.contact_id, entao o relatorio por contato ja conta
+// essa cotacao. Ao registrar o desfecho depois, o OutcomeScreen pre-carrega
+// este contato e o preserva. Upsert por evaluation_id (idempotente).
+export async function linkEvaluationContact(evaluationId: string, contactId: string): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Login necessário para vincular contato.');
+
+  const { error } = await supabase.from('outcomes').upsert(
+    {
+      evaluation_id: evaluationId,
+      user_id:       user.id,
+      status:        null,   // pendente: cotado, sem decisao ainda
+      was_purchased: false,
+      contact_id:    contactId,
+      updated_at:    new Date().toISOString(),
+    },
+    { onConflict: 'evaluation_id' }
+  );
+
+  if (error) throw new Error(error.message);
+}
+
+// Atualiza o VEICULO (versao FIPE) de uma avaliacao ja salva e os valores
+// recalculados. Usado pelo "Alterar versão" no histórico. RLS garante que o
+// usuario so altera as proprias avaliacoes.
+export async function updateEvaluationVehicle(
+  evaluationId: string,
+  vehicle: FipeVehicleInfo,
+  rc: VersionRecompute
+): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Login necessário para alterar a versão.');
+
+  const { error } = await supabase
+    .from('evaluations')
+    .update({
+      brand:                 vehicle.brand,
+      model:                 vehicle.model,
+      model_year:            vehicle.modelYear,
+      fuel:                  vehicle.fuel,
+      fipe_code:             vehicle.codeFipe,
+      fipe_price:            vehicle.priceValue,
+      fipe_reference_month:  vehicle.referenceMonth,
+      base_discount_percent: rc.baseDiscountPercent,
+      discount_source:       rc.discountSource,
+      standard_value:        rc.standardValue,
+      estimated_value:       rc.estimatedValue,
+      armor_adjustment_value: rc.armorAdjustmentValue,
+      final_offer_value:     rc.finalOfferValue,
+      repasse_value:         rc.repasseValue,
+    })
+    .eq('id', evaluationId);
+
+  if (error) throw new Error(error.message);
 }
 
 export async function deleteEvaluation(evaluationId: string): Promise<void> {
@@ -79,13 +140,20 @@ export const HISTORY_PAGE_SIZE = 30;
 // mais antigas simplesmente sumiam da tela; agora carrega sob demanda.
 export async function fetchEvaluationsPage(
   offset: number,
-  limit = HISTORY_PAGE_SIZE
+  limit = HISTORY_PAGE_SIZE,
+  fromISO?: string | null,
+  toISO?: string | null
 ): Promise<EvaluationWithOutcome[]> {
-  const { data, error } = await supabase
+  let query = supabase
     .from('evaluations_with_outcome')
     .select('*')
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+    .order('created_at', { ascending: false });
+
+  // Filtro por intervalo (opcional): from = inicio, to = fim (inclusivo).
+  if (fromISO) query = query.gte('created_at', fromISO);
+  if (toISO) query = query.lte('created_at', toISO);
+
+  const { data, error } = await query.range(offset, offset + limit - 1);
 
   if (error) throw new Error(error.message);
   return (data ?? []) as EvaluationWithOutcome[];
@@ -95,19 +163,26 @@ export async function fetchEvaluationsPage(
 // carregadas — senão procurar um carro antigo não acharia nada.
 export async function searchEvaluations(
   term: string,
-  limit = 50
+  limit = 50,
+  fromISO?: string | null,
+  toISO?: string | null
 ): Promise<EvaluationWithOutcome[]> {
   // Vírgula, % e parênteses quebram a sintaxe do filtro .or() do PostgREST.
   const safe = term.trim().replace(/[,%()]/g, ' ').trim();
   if (!safe) return [];
   const pattern = `%${safe}%`;
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('evaluations_with_outcome')
     .select('*')
     .or(`plate.ilike.${pattern},brand.ilike.${pattern},model.ilike.${pattern}`)
-    .order('created_at', { ascending: false })
-    .limit(limit);
+    .order('created_at', { ascending: false });
+
+  // Filtro por intervalo (opcional): combina com a busca por texto.
+  if (fromISO) query = query.gte('created_at', fromISO);
+  if (toISO) query = query.lte('created_at', toISO);
+
+  const { data, error } = await query.limit(limit);
 
   if (error) throw new Error(error.message);
   return (data ?? []) as EvaluationWithOutcome[];

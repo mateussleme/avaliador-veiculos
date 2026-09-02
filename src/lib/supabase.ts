@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 
@@ -83,11 +84,34 @@ const LargeSecureStoreAdapter = {
   },
 };
 
+// Na WEB (PWA) o SecureStore nao existe: usamos localStorage do navegador.
+// O adaptador nativo (SecureStore com chunks) continua igual no Android/iOS.
+// O typeof localStorage guarda contra ambientes sem window (ex: pre-render).
+const WebStorageAdapter = {
+  async getItem(key: string): Promise<string | null> {
+    if (typeof localStorage === 'undefined') return null;
+    return localStorage.getItem(key);
+  },
+  async setItem(key: string, value: string): Promise<void> {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(key, value);
+  },
+  async removeItem(key: string): Promise<void> {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.removeItem(key);
+  },
+};
+
+const sessionStorageAdapter =
+  Platform.OS === 'web' ? WebStorageAdapter : LargeSecureStoreAdapter;
+
 export const supabase = createClient(supabaseUrl, supabaseAnon, {
   auth: {
-    storage:            LargeSecureStoreAdapter,
+    storage:            sessionStorageAdapter,
     autoRefreshToken:   true,
     persistSession:     true,
-    detectSessionInUrl: false,
+    // Na web, o Supabase precisa ler o token que volta na URL apos login OAuth
+    // (ex: Google). No nativo o fluxo e via deep link, entao fica false.
+    detectSessionInUrl: Platform.OS === 'web',
   },
 });

@@ -35,6 +35,8 @@ export interface Evaluation {
   delaminated_window_count: number;
   armor_adjustment_value: number;
   preparation_cost: number;
+  additional_costs: number; // gastos adicionais previstos (R$)
+  optionals_value: number;  // opcionais/valorização que somam (R$)
   final_offer_value: number;
   repasse_value: number;
   offer_value: number | null; // oferta informada pelo avaliador (opcional)

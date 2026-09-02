@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { ActivityIndicator, BackHandler, Platform, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, BackHandler, Platform, StyleSheet, View } from 'react-native';
 import type { Session } from '@supabase/supabase-js';
 
+import { useFonts } from 'expo-font';
 import { supabase } from './src/lib/supabase';
 import { AppHeader } from './src/components/AppHeader';
 import { LaunchScreen } from './src/components/LaunchScreen';
@@ -21,9 +22,16 @@ import { ContactsScreen } from './src/screens/ContactsScreen';
 import { ContactDetailScreen } from './src/screens/ContactDetailScreen';
 import { colors } from './src/theme/tokens';
 import { EvaluationInput, EvaluationResult, FipeVehicleInfo, VehicleKind } from './src/domain/types';
-import { FipeVersionMatch } from './src/api/plateApi';
+import { evaluateVehicle, recomputeForNewVehicle } from './src/domain/evaluationEngine';
+import { FipeVersionMatch, fetchVehicleByPlate } from './src/api/plateApi';
+import { parsePlate } from './src/domain/plateValidation';
+import { updateEvaluationVehicle } from './src/services/evaluationService';
 import { EvaluationWithOutcome } from './src/types/database';
 import { ContactSummary } from './src/services/contactService';
+
+// O Sentry e inicializado em index.ts (src/lib/sentry.ts), com redacao de PII.
+// Nao adicionar Sentry.init aqui: init duplicado sobrescreve a configuracao de
+// privacidade e o wrap duplicado quebra o error boundary raiz.
 
 // ============================================================
 // FLAG DE AUTENTICAÇÃO
@@ -34,13 +42,23 @@ import { ContactSummary } from './src/services/contactService';
 const REQUIRE_AUTH = true;
 
 type EvalStep = 'search' | 'version-select' | 'form' | 'result';
-type HistoryStep = 'list' | 'detail' | 'outcome';
-type ContactsStep = 'list' | 'detail';
+type HistoryStep = 'list' | 'detail' | 'outcome' | 'version-select';
+type ContactsStep = 'list' | 'detail' | 'eval-detail' | 'eval-outcome';
 
 export default function App() {
   const [session, setSession]     = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(REQUIRE_AUTH);
   const [showLaunch, setShowLaunch] = useState(true);
+
+  // Carrega as fontes em tempo de execucao. No nativo elas ja vem embutidas no
+  // build; na WEB (PWA) o navegador so as tem se forem registradas aqui. Usamos
+  // as fontes variaveis, que cobrem todos os pesos via fontWeight. Os nomes
+  // batem com os de src/theme/tokens.ts (fontFamily).
+  const [fontsLoaded] = useFonts({
+    SpaceGrotesk: require('./assets/fonts/SpaceGrotesk-VariableFont_wght.ttf'),
+    Inter: require('./assets/fonts/Inter-VariableFont_opsz,wght.ttf'),
+    'Inter Display': require('./assets/fonts/Inter-VariableFont_opsz,wght.ttf'),
+  });
 
   useEffect(() => {
     if (!REQUIRE_AUTH) return;
@@ -65,16 +83,25 @@ export default function App() {
   const [evalInput, setEvalInput] = useState<EvaluationInput | null>(null);
   const [result, setResult]       = useState<EvaluationResult | null>(null);
   const [searchedPlate, setSearchedPlate] = useState<string | undefined>(undefined);
+  // true quando o usuario tocou "Alterar versão" no resultado: ao escolher a
+  // nova versao, recalculamos com as MESMAS respostas e voltamos ao resultado.
+  const [changingVersion, setChangingVersion] = useState(false);
 
   // ---- Fluxo de histórico ----
   const [historyStep, setHistoryStep] = useState<HistoryStep>('list');
   const [selectedEvaluation, setSelectedEvaluation] = useState<EvaluationWithOutcome | null>(null);
   const [historyRefresh, setHistoryRefresh] = useState(0);
+  // Alterar versão no histórico: versões rebuscadas pela placa + estados.
+  const [historyMatches, setHistoryMatches] = useState<FipeVersionMatch[] | null>(null);
+  const [historyVersionLoading, setHistoryVersionLoading] = useState(false);
 
   // ---- Fluxo de contatos ----
   const [contactsStep, setContactsStep] = useState<ContactsStep>('list');
   const [selectedContact, setSelectedContact] = useState<ContactSummary | null>(null);
   const [contactsRefresh, setContactsRefresh] = useState(0);
+  // Avaliação aberta a partir da tela de um contato (independente do histórico).
+  const [contactEvaluation, setContactEvaluation] = useState<EvaluationWithOutcome | null>(null);
+  const [contactDetailRefresh, setContactDetailRefresh] = useState(0);
 
   const [privacyOpen, setPrivacyOpen] = useState(false);
 
@@ -87,6 +114,11 @@ export default function App() {
     setKind(k);
     setVehicle(v);
     setSearchedPlate(plate);
+    // Fluxo novo: descarta respostas/resultado de uma avaliacao anterior, para
+    // "Alterar versão" so recalcular quando as respostas forem deste veiculo.
+    setEvalInput(null);
+    setResult(null);
+    setChangingVersion(false);
     if (matches && matches.length > 1) {
       setAllMatches(matches);
       setEvalStep('version-select');
@@ -96,9 +128,38 @@ export default function App() {
     }
   }
 
+  // Volta para a lista de versoes a partir do resultado, sem perder as respostas.
+  function handleChangeVersion() {
+    if (!allMatches) return;
+    setChangingVersion(true);
+    setEvalStep('version-select');
+  }
+
+  // "Voltar" da tela de versoes: se o usuario veio do resultado (Alterar versão),
+  // retorna ao resultado; caso contrario, volta para a busca.
+  function backFromVersionSelect() {
+    if (changingVersion) {
+      setChangingVersion(false);
+      setEvalStep('result');
+    } else {
+      setEvalStep('search');
+    }
+  }
+
   function handleVersionConfirmed(match: FipeVersionMatch) {
     setVehicle(match.vehicle);
-    setEvalStep('form');
+    // Se veio de "Alterar versão" e o formulario ja foi respondido, recalcula
+    // com as mesmas respostas (so troca o veiculo) e vai direto ao resultado.
+    if (changingVersion && evalInput) {
+      const newInput: EvaluationInput = { ...evalInput, vehicle: match.vehicle };
+      setEvalInput(newInput);
+      setResult(evaluateVehicle(newInput));
+      setChangingVersion(false);
+      setEvalStep('result');
+    } else {
+      setChangingVersion(false);
+      setEvalStep('form');
+    }
   }
 
   function handleResult(evaluation: EvaluationResult, input: EvaluationInput) {
@@ -113,6 +174,7 @@ export default function App() {
     setResult(null);
     setEvalInput(null);
     setSearchedPlate(undefined);
+    setChangingVersion(false);
     setEvalStep('search');
   }
 
@@ -128,9 +190,93 @@ export default function App() {
     setSelectedEvaluation(null);
   }
 
+  // "Alterar versão" no histórico: rebusca as versões FIPE da placa da avaliação
+  // (cache do backend costuma tornar isso gratuito no mesmo mês) e abre a lista.
+  async function handleHistoryChangeVersion() {
+    const ev = selectedEvaluation;
+    if (!ev || !ev.plate) return;
+    const parsed = parsePlate(ev.plate);
+    if (!parsed) { Alert.alert('Placa inválida', 'Não foi possível reconhecer a placa desta avaliação.'); return; }
+
+    setHistoryVersionLoading(true);
+    try {
+      const result = await fetchVehicleByPlate(parsed);
+      if (result.allMatches.length <= 1) {
+        Alert.alert('Sem outras versões', 'A FIPE retornou apenas uma versão para esta placa.');
+        return;
+      }
+      setHistoryMatches(result.allMatches);
+      setHistoryStep('version-select');
+    } catch (err: any) {
+      Alert.alert('Erro ao buscar versões', err.message ?? 'Verifique sua conexão e tente novamente.');
+    } finally {
+      setHistoryVersionLoading(false);
+    }
+  }
+
+  // Confirma a nova versão: recalcula (mantendo ajuste % e preparação salvos) e
+  // atualiza a avaliação no banco. Reflete localmente sem precisar recarregar.
+  async function handleHistoryVersionConfirmed(match: FipeVersionMatch) {
+    const ev = selectedEvaluation;
+    if (!ev) return;
+    setHistoryVersionLoading(true);
+    try {
+      const rc = recomputeForNewVehicle({
+        vehicle: match.vehicle,
+        adjustmentPercent: ev.adjustment_percent,
+        preparationCost: ev.preparation_cost,
+        additionalCosts: ev.additional_costs ?? 0,
+        optionalsValue: ev.optionals_value ?? 0,
+        isArmored: ev.is_armored,
+        delaminatedWindowCount: ev.delaminated_window_count,
+      });
+      await updateEvaluationVehicle(ev.id, match.vehicle, rc);
+      setSelectedEvaluation({
+        ...ev,
+        brand:                 match.vehicle.brand,
+        model:                 match.vehicle.model,
+        model_year:            match.vehicle.modelYear,
+        fuel:                  match.vehicle.fuel,
+        fipe_code:             match.vehicle.codeFipe,
+        fipe_price:            match.vehicle.priceValue,
+        fipe_reference_month:  match.vehicle.referenceMonth,
+        base_discount_percent: rc.baseDiscountPercent,
+        discount_source:       rc.discountSource,
+        standard_value:        rc.standardValue,
+        estimated_value:       rc.estimatedValue,
+        armor_adjustment_value: rc.armorAdjustmentValue,
+        final_offer_value:     rc.finalOfferValue,
+        repasse_value:         rc.repasseValue,
+      });
+      setHistoryMatches(null);
+      setHistoryRefresh(n => n + 1);
+      setContactsRefresh(n => n + 1);
+      setHistoryStep('detail');
+    } catch (err: any) {
+      Alert.alert('Erro ao alterar versão', err.message ?? 'Tente novamente.');
+    } finally {
+      setHistoryVersionLoading(false);
+    }
+  }
+
   function handleSelectContact(summary: ContactSummary) {
     setSelectedContact(summary);
     setContactsStep('detail');
+  }
+
+  function handleSelectContactCar(evaluation: EvaluationWithOutcome) {
+    setContactEvaluation(evaluation);
+    setContactsStep('eval-detail');
+  }
+
+  function handleContactOutcomeSaved() {
+    // O desfecho mudou: atualiza a lista de carros do contato, os resumos de
+    // contatos e o histórico. Volta para a tela do contato.
+    setContactDetailRefresh(n => n + 1);
+    setContactsRefresh(n => n + 1);
+    setHistoryRefresh(n => n + 1);
+    setContactsStep('detail');
+    setContactEvaluation(null);
   }
 
   function handleTabChange(tab: TabKey) {
@@ -152,40 +298,53 @@ export default function App() {
     const onBack = () => {
       if (privacyOpen) { setPrivacyOpen(false); return true; }
       if (activeTab === 'history') {
-        if (historyStep === 'outcome') { setHistoryStep('detail'); return true; }
-        if (historyStep === 'detail')  { setHistoryStep('list');   return true; }
+        if (historyStep === 'outcome')        { setHistoryStep('detail'); return true; }
+        if (historyStep === 'version-select') { setHistoryStep('detail'); return true; }
+        if (historyStep === 'detail')         { setHistoryStep('list');   return true; }
         return false;
       }
       if (activeTab === 'contacts') {
-        if (contactsStep === 'detail') { setContactsStep('list'); return true; }
+        if (contactsStep === 'eval-outcome') { setContactsStep('eval-detail'); return true; }
+        if (contactsStep === 'eval-detail')  { setContactsStep('detail');      return true; }
+        if (contactsStep === 'detail')       { setContactsStep('list');        return true; }
         return false;
       }
       if (evalStep === 'result')         { setEvalStep('form');                                     return true; }
       if (evalStep === 'form')           { setEvalStep(allMatches ? 'version-select' : 'search');   return true; }
-      if (evalStep === 'version-select') { setEvalStep('search');                                   return true; }
+      if (evalStep === 'version-select') { backFromVersionSelect();                                 return true; }
       return false;
     };
 
     const sub = BackHandler.addEventListener('hardwareBackPress', onBack);
     return () => sub.remove();
-  }, [privacyOpen, activeTab, historyStep, contactsStep, evalStep, allMatches]);
+  }, [privacyOpen, activeTab, historyStep, contactsStep, evalStep, allMatches, changingVersion]);
 
   function getHeaderProps() {
     if (activeTab === 'history') {
-      if (historyStep === 'detail')  return { title: 'Detalhes da avaliação', onBack: () => setHistoryStep('list') };
-      if (historyStep === 'outcome') return { title: 'Registrar desfecho', onBack: () => setHistoryStep('detail') };
+      if (historyStep === 'detail')         return { title: 'Detalhes da avaliação', onBack: () => setHistoryStep('list') };
+      if (historyStep === 'version-select') return { title: 'Selecione a versão', onBack: () => setHistoryStep('detail') };
+      if (historyStep === 'outcome')        return { title: 'Registrar desfecho', onBack: () => setHistoryStep('detail') };
       return { title: 'Histórico' };
     }
     if (activeTab === 'contacts') {
-      if (contactsStep === 'detail') return { title: 'Contato', onBack: () => setContactsStep('list') };
+      if (contactsStep === 'eval-outcome') return { title: 'Registrar desfecho', onBack: () => setContactsStep('eval-detail') };
+      if (contactsStep === 'eval-detail')  return { title: 'Detalhes da avaliação', onBack: () => setContactsStep('detail') };
+      if (contactsStep === 'detail')       return { title: 'Contato', onBack: () => setContactsStep('list') };
       return { title: 'Contatos', subtitle: 'Cotações por contato e grupo' };
     }
     switch (evalStep) {
       case 'search':         return { title: 'AutoValor', subtitle: 'Busca por marca, modelo e ano' };
-      case 'version-select': return { title: 'Selecione a versão', subtitle: vehicle ? `${vehicle.brand} ${vehicle.model}` : undefined, onBack: () => setEvalStep('search') };
+      case 'version-select': return { title: 'Selecione a versão', subtitle: vehicle ? `${vehicle.brand} ${vehicle.model}` : undefined, onBack: backFromVersionSelect };
       case 'form':           return { title: 'Condições do veículo', subtitle: vehicle ? `${vehicle.brand} ${vehicle.model}` : undefined, onBack: () => setEvalStep(allMatches ? 'version-select' : 'search') };
       case 'result':         return { title: 'Resultado', onBack: () => setEvalStep('form') };
     }
+  }
+
+  // Na WEB, segura a renderizacao ate as fontes carregarem, para nao aparecer
+  // um flash com a fonte serifada padrao do navegador. No nativo nao bloqueia
+  // (as fontes ja vem embutidas), entao fontsLoaded nao atrasa o startup.
+  if (Platform.OS === 'web' && !fontsLoaded) {
+    return <View style={styles.root} />;
   }
 
   // ---- Launch Screen (logo com fade/scale, sobre o mesmo fundo do splash nativo) ----
@@ -254,6 +413,7 @@ export default function App() {
                   sessionToken={sessionToken}
                   onRestart={handleRestart}
                   onSaved={() => setHistoryRefresh(n => n + 1)}
+                  onChangeVersion={allMatches && allMatches.length > 1 ? handleChangeVersion : undefined}
                 />
               )}
             </>
@@ -265,7 +425,19 @@ export default function App() {
                 <HistoryScreen onSelectEvaluation={handleSelectEvaluation} refreshTrigger={historyRefresh} />
               )}
               {historyStep === 'detail' && selectedEvaluation && (
-                <EvaluationDetailScreen evaluation={selectedEvaluation} onRegisterOutcome={() => setHistoryStep('outcome')} />
+                <EvaluationDetailScreen
+                  evaluation={selectedEvaluation}
+                  onRegisterOutcome={() => setHistoryStep('outcome')}
+                  onChangeVersion={selectedEvaluation.plate ? handleHistoryChangeVersion : undefined}
+                  changingVersion={historyVersionLoading}
+                />
+              )}
+              {historyStep === 'version-select' && selectedEvaluation && historyMatches && (
+                <VersionSelectionScreen
+                  kind={selectedEvaluation.vehicle_kind}
+                  allMatches={historyMatches}
+                  onConfirm={handleHistoryVersionConfirmed}
+                />
               )}
               {historyStep === 'outcome' && selectedEvaluation && (
                 <OutcomeScreen evaluation={selectedEvaluation} onSaved={handleOutcomeSaved} />
@@ -279,7 +451,20 @@ export default function App() {
                 <ContactsScreen onSelectContact={handleSelectContact} refreshTrigger={contactsRefresh} />
               )}
               {contactsStep === 'detail' && selectedContact && (
-                <ContactDetailScreen summary={selectedContact} />
+                <ContactDetailScreen
+                  summary={selectedContact}
+                  onSelectCar={handleSelectContactCar}
+                  refreshTrigger={contactDetailRefresh}
+                />
+              )}
+              {contactsStep === 'eval-detail' && contactEvaluation && (
+                <EvaluationDetailScreen
+                  evaluation={contactEvaluation}
+                  onRegisterOutcome={() => setContactsStep('eval-outcome')}
+                />
+              )}
+              {contactsStep === 'eval-outcome' && contactEvaluation && (
+                <OutcomeScreen evaluation={contactEvaluation} onSaved={handleContactOutcomeSaved} />
               )}
             </>
           )}

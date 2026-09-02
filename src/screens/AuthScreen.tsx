@@ -78,6 +78,21 @@ export function AuthScreen() {
   async function handleGoogleLogin() {
     setGoogleLoading(true);
     try {
+      // WEB (PWA): fluxo padrao do navegador. O Supabase redireciona a propria
+      // pagina para o Google e, ao voltar, o detectSessionInUrl (ligado na web
+      // em src/lib/supabase.ts) le a sessao. O redirectTo volta para a origem
+      // atual (a URL do PWA), que precisa estar nas "Redirect URLs" do Supabase.
+      if (Platform.OS === 'web') {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: window.location.origin },
+        });
+        if (error) throw error;
+        // O navegador vai redirecionar; nao ha mais nada a fazer aqui.
+        return;
+      }
+
+      // NATIVO: usa o esquema do app (deep link) + navegador do sistema.
       const redirectTo = makeRedirectUri();
 
       const { data, error } = await supabase.auth.signInWithOAuth({
