@@ -12,8 +12,7 @@ if (!supabaseUrl || !supabaseAnon) {
 // O SecureStore tem limite de 2048 bytes por chave.
 // Os tokens JWT do Supabase costumam ultrapassar esse limite, então
 // dividimos em pedaços (chunks) automaticamente.
-const CHUNK_SIZE = 1900; // margem de segurança abaixo do limite de 2048
-
+const CHUNK_SIZE = 1900;
 function chunkKey(key: string, index: number) {
   return `${key}_chunk_${index}`;
 }
@@ -21,7 +20,6 @@ function chunkKey(key: string, index: number) {
 const LargeSecureStoreAdapter = {
   async getItem(key: string): Promise<string | null> {
     try {
-      // Verifica se foi armazenado em chunks
       const countStr = await SecureStore.getItemAsync(`${key}_numChunks`);
       if (countStr) {
         const count = parseInt(countStr, 10);
@@ -33,15 +31,12 @@ const LargeSecureStoreAdapter = {
         }
         return chunks.join('');
       }
-      // Valor simples (sem chunks)
       return SecureStore.getItemAsync(key);
     } catch {
       return null;
     }
   },
-
   async setItem(key: string, value: string): Promise<void> {
-    // Limpa chunks anteriores caso existam
     const oldCountStr = await SecureStore.getItemAsync(`${key}_numChunks`);
     if (oldCountStr) {
       const oldCount = parseInt(oldCountStr, 10);
@@ -50,14 +45,10 @@ const LargeSecureStoreAdapter = {
       }
       await SecureStore.deleteItemAsync(`${key}_numChunks`);
     }
-
     if (value.length <= CHUNK_SIZE) {
-      // Cabe em uma única entrada
       await SecureStore.setItemAsync(key, value);
       return;
     }
-
-    // Divide em chunks
     const count = Math.ceil(value.length / CHUNK_SIZE);
     await SecureStore.setItemAsync(`${key}_numChunks`, String(count));
     for (let i = 0; i < count; i++) {
@@ -65,7 +56,6 @@ const LargeSecureStoreAdapter = {
       await SecureStore.setItemAsync(chunkKey(key, i), chunk);
     }
   },
-
   async removeItem(key: string): Promise<void> {
     try {
       const countStr = await SecureStore.getItemAsync(`${key}_numChunks`);
@@ -84,7 +74,7 @@ const LargeSecureStoreAdapter = {
   },
 };
 
-// Na WEB (PWA) o SecureStore nao existe: usamos localStorage do navegador.
+// Na WEB (PWA) o SecureStore não existe: usamos localStorage do navegador.
 // O adaptador nativo (SecureStore com chunks) continua igual no Android/iOS.
 // O typeof localStorage guarda contra ambientes sem window (ex: pre-render).
 const WebStorageAdapter = {
@@ -110,8 +100,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnon, {
     storage:            sessionStorageAdapter,
     autoRefreshToken:   true,
     persistSession:     true,
-    // Na web, o Supabase precisa ler o token que volta na URL apos login OAuth
-    // (ex: Google). No nativo o fluxo e via deep link, entao fica false.
+    // Na web, o Supabase precisa ler o token que volta na URL após login OAuth
+    // (ex: Google). No nativo o fluxo é via deep link, então fica false.
     detectSessionInUrl: Platform.OS === 'web',
   },
 });
