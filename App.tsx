@@ -28,6 +28,7 @@ import { parsePlate } from './src/domain/plateValidation';
 import { updateEvaluationVehicle } from './src/services/evaluationService';
 import { EvaluationWithOutcome } from './src/types/database';
 import { ContactSummary } from './src/services/contactService';
+import { loadAndApplyEvaluationParams } from './src/services/evaluationParams';
 
 // O Sentry e inicializado em index.ts (src/lib/sentry.ts), com redacao de PII.
 // Nao adicionar Sentry.init aqui: init duplicado sobrescreve a configuracao de
@@ -60,15 +61,19 @@ export default function App() {
     'Inter Display': require('./assets/fonts/Inter-VariableFont_opsz,wght.ttf'),
   });
 
-  useEffect(() => {
-    if (!REQUIRE_AUTH) return;
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setAuthLoading(false);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
-    return () => listener.subscription.unsubscribe();
-  }, []);
+ useEffect(() => {
+  if (!REQUIRE_AUTH) return;
+  supabase.auth.getSession().then(({ data }) => {
+    setSession(data.session);
+    setAuthLoading(false);
+    if (data.session) loadAndApplyEvaluationParams(); // busca parâmetros já com sessão válida
+  });
+  const { data: listener } = supabase.auth.onAuthStateChange((_e, s) => {
+    setSession(s);
+    if (s) loadAndApplyEvaluationParams(); // reaplica ao logar/trocar de sessão
+  });
+  return () => listener.subscription.unsubscribe();
+}, []);
 
   // Sessão disponível para o ResultScreen enviar no header de chamadas ao backend
   const sessionToken = session?.access_token ?? null;

@@ -18,6 +18,22 @@ export interface DiscountEntry {
 
 export const DEFAULT_DISCOUNT_PERCENT = 22;
 
+// Permite sobrescrever o desconto padrão remotamente (via evaluation_parameters
+// no Supabase), sem tornar lookupDiscount() assíncrona — ela roda a cada tecla
+// digitada e precisa continuar síncrona. Chame setDefaultDiscountPercent() uma
+// vez no início do app (ex: após login), com o valor vindo do backend.
+let _defaultDiscountOverride: number | null = null;
+
+export function setDefaultDiscountPercent(percent: number): void {
+  if (!Number.isFinite(percent) || percent < 0 || percent > 100) return; // guarda contra valor inválido
+  _defaultDiscountOverride = percent;
+  _lookupCache.clear(); // resultados 'default' cacheados ficariam desatualizados
+}
+
+function currentDefaultDiscountPercent(): number {
+  return _defaultDiscountOverride ?? DEFAULT_DISCOUNT_PERCENT;
+}
+
 // ---- Tabela principal — edite aqui para adicionar ou ajustar modelos ----
 export const DISCOUNT_TABLE: DiscountEntry[] = [
   // BMW
@@ -715,9 +731,10 @@ function computeDiscount(brand: string, model: string): DiscountLookupResult {
     return { discount: brandDefault, discountPercent: Math.round(brandDefault * 100), source: 'table', matchedBrand: brand, matchedModel: brand };
   }
 
+  const defaultPercent = currentDefaultDiscountPercent();
   return {
-    discount: DEFAULT_DISCOUNT_PERCENT / 100,
-    discountPercent: DEFAULT_DISCOUNT_PERCENT,
+    discount: defaultPercent / 100,
+    discountPercent: defaultPercent,
     source: 'default',
   };
 }
