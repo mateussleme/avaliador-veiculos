@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 const supabaseUrl  = process.env.EXPO_PUBLIC_SUPABASE_URL  ?? '';
 const supabaseAnon = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
@@ -11,8 +12,7 @@ if (!supabaseUrl || !supabaseAnon) {
 // O SecureStore tem limite de 2048 bytes por chave.
 // Os tokens JWT do Supabase costumam ultrapassar esse limite, então
 // dividimos em pedaços (chunks) automaticamente.
-const CHUNK_SIZE = 1900; // margem de segurança abaixo do limite de 2048
-
+const CHUNK_SIZE = 1900;
 function chunkKey(key: string, index: number) {
   return `${key}_chunk_${index}`;
 }
@@ -20,7 +20,6 @@ function chunkKey(key: string, index: number) {
 const LargeSecureStoreAdapter = {
   async getItem(key: string): Promise<string | null> {
     try {
-      // Verifica se foi armazenado em chunks
       const countStr = await SecureStore.getItemAsync(`${key}_numChunks`);
       if (countStr) {
         const count = parseInt(countStr, 10);
@@ -32,15 +31,12 @@ const LargeSecureStoreAdapter = {
         }
         return chunks.join('');
       }
-      // Valor simples (sem chunks)
       return SecureStore.getItemAsync(key);
     } catch {
       return null;
     }
   },
-
   async setItem(key: string, value: string): Promise<void> {
-    // Limpa chunks anteriores caso existam
     const oldCountStr = await SecureStore.getItemAsync(`${key}_numChunks`);
     if (oldCountStr) {
       const oldCount = parseInt(oldCountStr, 10);
@@ -49,14 +45,10 @@ const LargeSecureStoreAdapter = {
       }
       await SecureStore.deleteItemAsync(`${key}_numChunks`);
     }
-
     if (value.length <= CHUNK_SIZE) {
-      // Cabe em uma única entrada
       await SecureStore.setItemAsync(key, value);
       return;
     }
-
-    // Divide em chunks
     const count = Math.ceil(value.length / CHUNK_SIZE);
     await SecureStore.setItemAsync(`${key}_numChunks`, String(count));
     for (let i = 0; i < count; i++) {
@@ -64,7 +56,6 @@ const LargeSecureStoreAdapter = {
       await SecureStore.setItemAsync(chunkKey(key, i), chunk);
     }
   },
-
   async removeItem(key: string): Promise<void> {
     try {
       const countStr = await SecureStore.getItemAsync(`${key}_numChunks`);
@@ -83,9 +74,23 @@ const LargeSecureStoreAdapter = {
   },
 };
 
+// localStorage do navegador não tem o limite de 2048 bytes do SecureStore,
+// então na web não precisamos do esquema de chunks.
+const WebLocalStorageAdapter = {
+  async getItem(key: string): Promise<string | null> {
+    return window.localStorage.getItem(key);
+  },
+  async setItem(key: string, value: string): Promise<void> {
+    window.localStorage.setItem(key, value);
+  },
+  async removeItem(key: string): Promise<void> {
+    window.localStorage.removeItem(key);
+  },
+};
+
 export const supabase = createClient(supabaseUrl, supabaseAnon, {
   auth: {
-    storage:            LargeSecureStoreAdapter,
+    storage:            Platform.OS === 'web' ? WebLocalStorageAdapter : LargeSecureStoreAdapter,
     autoRefreshToken:   true,
     persistSession:     true,
     detectSessionInUrl: false,
