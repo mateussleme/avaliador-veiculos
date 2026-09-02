@@ -2,6 +2,7 @@
 
 AutoValor é um aplicativo desenvolvido como Trabalho de Conclusão de Curso (TCC) com o objetivo de auxiliar na avaliação de veículos seminovos. A aplicação utiliza informações da Tabela FIPE e parâmetros definidos para estimar o valor de compra e o valor de repasse de um veículo, considerando fatores como quilometragem, estado dos pneus, histórico de revisões e repintura.
 
+
 ## Funcionalidades
 
 - Consulta de veículos por placa ou seleção manual.
